@@ -1,9 +1,7 @@
 "use client"
-import {
-  useChatStore,
-  type Source,
-  type Confidence,
-} from "@/lib/store/chatStore"
+// lib/hooks/useChat.ts
+import { useChatStore } from "@/lib/store/chatStore"
+import type { Source, Confidence } from "@/lib/types/chat"
 
 export function useChat() {
   const {
@@ -15,7 +13,7 @@ export function useChat() {
   } = useChatStore()
 
   const sendMessage = async (query: string) => {
-    // 1. Add user message immediately for instant UI feedback
+    // 1. Optimistic user message — appears instantly
     addMessage({
       id: crypto.randomUUID(),
       role: "user",
@@ -23,7 +21,7 @@ export function useChat() {
       createdAt: new Date(),
     })
 
-    // 2. Add blank assistant message — tokens will fill it
+    // 2. Blank assistant placeholder — fills via stream
     addMessage({
       id: crypto.randomUUID(),
       role: "assistant",
@@ -38,35 +36,43 @@ export function useChat() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, domain: activeDomain }),
+        body: JSON.stringify({ query, domain: activeDomain?.id ?? null }),
       })
 
       if (!res.body) throw new Error("No response body")
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
+      let buffer = ""
+      let streamDone = false
 
-      while (true) {
+      while (!streamDone) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const raw = decoder.decode(value, { stream: true })
-        const lines = raw.split("\n").filter((l) => l.startsWith("data: "))
+        buffer += decoder.decode(value, { stream: true })
+        const events = buffer.split("\n\n")
+        buffer = events.pop() ?? ""
 
-        for (const line of lines) {
-          const payload = line.slice(6) // strip "data: "
+        for (const event of events) {
+          const payload = event
+            .split("\n")
+            .filter((line) => line.startsWith("data: "))
+            .map((line) => line.slice(6))
+            .join("\n")
 
-          if (payload === "[DONE]") break
+          if (payload === "[DONE]") {
+            streamDone = true
+            break
+          }
 
-          // Sources event — parse and finalize the message
           if (payload.startsWith("[SOURCES]")) {
             const json = payload.slice(9, payload.lastIndexOf("[/SOURCES]"))
             try {
               const sources: Source[] = JSON.parse(json)
-              // Extract confidence from current message content
-              const currentContent =
+              const content =
                 useChatStore.getState().messages.at(-1)?.content ?? ""
-              const lower = currentContent.toLowerCase()
+              const lower = content.toLowerCase()
               const confidence: Confidence = lower.includes("confidence: high")
                 ? "high"
                 : lower.includes("confidence: low")
@@ -79,14 +85,17 @@ export function useChat() {
             continue
           }
 
-          // Regular token — append to message
           appendToken(payload)
         }
       }
     } catch (err) {
       console.error("Chat error:", err)
-      appendToken("\n\n[Error: Failed to get response. Please try again.]")
+      appendToken("\n\n*Connection error — please try again.*")
     } finally {
+      const lastMessage = useChatStore.getState().messages.at(-1)
+      if (lastMessage?.role === "assistant" && lastMessage.isStreaming) {
+        finalizeMessage(lastMessage.sources ?? [], lastMessage.confidence ?? "medium")
+      }
       setStreaming(false)
     }
   }

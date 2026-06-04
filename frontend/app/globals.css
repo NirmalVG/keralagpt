@@ -1,26 +1,255 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=Geist:wght@300;400;500;600&family=Noto+Serif+Malayalam:wght@400;600&display=swap");
 @import "tailwindcss";
 
+/* ============================================================
+   KERALA DESIGN TOKENS
+   Extracted from the Stitch design — warm parchment + deep gold
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Backgrounds ─────────────────────────────────────── */
+  --bg-page: #f7f2ea; /* warm parchment — page ground */
+  --bg-sidebar: #ede8df; /* slightly deeper parchment */
+  --bg-card: #ffffff; /* pure white for cards */
+  --bg-elevated: #fffdf8; /* near-white for input, elevated surfaces */
+  --bg-domain-active: #f0e4c8; /* warm honey — active domain row */
+  --bg-pill-active: #f0e4c8; /* active domain pill */
+
+  /* ── Aurora/Kerala Accent System ─────────────────────── */
+  --gold-dark: #6b4410; /* deep temple gold — headings, icons */
+  --gold-mid: #9b6820; /* mid gold — active states */
+  --gold-light: #c8952a; /* bright gold — borders, highlights */
+  --gold-subtle: #f0e4c8; /* very light gold — bg tints */
+  --crimson: #8b2010; /* Theyyam crimson — brand accent */
+  --jade: #1a6b3c; /* monsoon jade — success */
+  --sapphire: #1a4a7a; /* deep sapphire — links */
+
+  /* ── Text ────────────────────────────────────────────── */
+  --text-primary: #2c1a0e; /* warm near-black */
+  --text-secondary: #6b4f35; /* warm mid-brown */
+  --text-muted: #9b8570; /* warm grey-brown */
+  --text-gold: #7a5018; /* gold-brown for labels */
+  --text-inverse: #faf7f2; /* for dark surfaces */
+
+  /* ── Borders ─────────────────────────────────────────── */
+  --border-subtle: rgba(107, 68, 16, 0.1);
+  --border-default: rgba(107, 68, 16, 0.16);
+  --border-strong: rgba(107, 68, 16, 0.24);
+  --border-gold: rgba(200, 149, 42, 0.35);
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-xs:
+    0 1px 2px rgba(44, 26, 14, 0.04), 0 1px 3px rgba(44, 26, 14, 0.06);
+  --shadow-sm:
+    0 2px 8px rgba(44, 26, 14, 0.06), 0 1px 4px rgba(44, 26, 14, 0.04);
+  --shadow-md:
+    0 4px 16px rgba(44, 26, 14, 0.08), 0 2px 8px rgba(44, 26, 14, 0.05);
+  --shadow-lg:
+    0 8px 32px rgba(44, 26, 14, 0.1), 0 4px 16px rgba(44, 26, 14, 0.06);
+  --shadow-gold:
+    0 0 24px rgba(200, 149, 42, 0.2), 0 4px 16px rgba(200, 149, 42, 0.12);
+
+  /* ── Typography ──────────────────────────────────────── */
+  --font-display: "DM Serif Display", serif;
+  --font-body: "Source Serif 4", serif;
+  --font-ui: "Geist", -apple-system, sans-serif;
+  --font-malayalam: "Noto Serif Malayalam", serif;
+
+  /* ── Layout ──────────────────────────────────────────── */
+  --sidebar-width: 268px;
+  --source-width: 300px;
+  --header-height: 56px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Dark mode overrides ─────────────────────────────────── */
+.dark {
+  --bg-page: #0c090e;
+  --bg-sidebar: #110e14;
+  --bg-card: #19151e;
+  --bg-elevated: #221d28;
+  --bg-domain-active: #2a2035;
+  --bg-pill-active: #2a2035;
+
+  --gold-dark: #ffb830;
+  --gold-mid: #e8a020;
+  --gold-light: #c8952a;
+  --gold-subtle: rgba(200, 149, 42, 0.12);
+  --crimson: #ff4d63;
+  --jade: #10d98a;
+  --sapphire: #38bdf8;
+
+  --text-primary: #f0ebe1;
+  --text-secondary: #9b8a7a;
+  --text-muted: #5c4d40;
+  --text-gold: #ffb830;
+  --text-inverse: #1a1614;
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-gold: rgba(200, 149, 42, 0.3);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-gold:
+    0 0 32px rgba(200, 149, 42, 0.25), 0 4px 16px rgba(200, 149, 42, 0.15);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ── Base resets ─────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  transition:
+    background-color 0.6s ease,
+    color 0.4s ease;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-gold);
+  border-radius: 100px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-light);
+}
+
+/* ── Text selection ──────────────────────────────────────── */
+::selection {
+  background: rgba(200, 149, 42, 0.2);
+  color: var(--text-primary);
+}
+
+/* ── Focus ring ──────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--gold-light);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Aurora gradient border animation ───────────────────── */
+@keyframes border-spin {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 400% 50%;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Utility classes ─────────────────────────────────────── */
+.font-display {
+  font-family: var(--font-display);
+}
+.font-body {
+  font-family: var(--font-body);
+}
+.font-ui {
+  font-family: var(--font-ui);
+}
+.font-malayalam {
+  font-family: var(--font-malayalam);
+}
+
+.animate-fade-up {
+  animation: fade-up 0.3s ease-out forwards;
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out forwards;
+}
+.animate-slide-right {
+  animation: slide-right 0.3s ease-out forwards;
+}
+
+.streaming-cursor::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--gold-light);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 1s step-end infinite;
 }

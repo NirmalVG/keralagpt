@@ -1,35 +1,19 @@
 import { create } from "zustand"
+import type { Confidence, Domain, Message, Source } from "@/lib/types/chat"
 
-export type CredibilityTier = "official" | "academic" | "curated" | "community"
-export type Confidence = "high" | "medium" | "low"
-
-export type Source = {
-  title: string
-  section: string
-  credibility_tier: CredibilityTier
-  similarity: number
-  domain: string
-}
-
-export type Message = {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  sources?: Source[]
-  confidence?: Confidence
-  isStreaming?: boolean
-  createdAt: Date
-}
+export type { Message } from "@/lib/types/chat"
 
 interface ChatStore {
   messages: Message[]
   isStreaming: boolean
-  activeDomain: string | null
+  activeDomain: Domain | null
+  isDark: boolean
   addMessage: (msg: Message) => void
   appendToken: (token: string) => void
   finalizeMessage: (sources: Source[], confidence: Confidence) => void
   setStreaming: (v: boolean) => void
-  setDomain: (d: string | null) => void
+  setDomain: (d: Domain | null) => void
+  toggleTheme: () => void
   clearMessages: () => void
 }
 
@@ -37,6 +21,7 @@ export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   isStreaming: false,
   activeDomain: null,
+  isDark: false,
 
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
 
@@ -71,5 +56,12 @@ export const useChatStore = create<ChatStore>((set) => ({
 
   setStreaming: (v) => set({ isStreaming: v }),
   setDomain: (d) => set({ activeDomain: d }),
+  toggleTheme: () =>
+    set(() => {
+      const isDark = !document.documentElement.classList.contains("dark")
+      document.documentElement.classList.toggle("dark", isDark)
+      localStorage.setItem("keralagpt-theme", isDark ? "dark" : "light")
+      return { isDark }
+    }),
   clearMessages: () => set({ messages: [] }),
 }))
