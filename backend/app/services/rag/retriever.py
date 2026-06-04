@@ -9,6 +9,7 @@ Two-stage process:
 """
 from app.services.ingestion.embedder import embed_single
 from app.services.db.supabase_client import get_supabase
+from app.services.rag.web_search import needs_web_search, search_web, format_web_results_as_context
 
 
 async def retrieve_chunks(
@@ -106,4 +107,60 @@ async def retrieve_with_context(
         "chunks": top_chunks,
         "context_string": context_string,      # ready to inject into LLM prompt
         "sources_count": len(top_chunks),
+    }
+
+async def retrieve_hybrid(
+    query: str,
+    domain: str | None = None,
+    top_k: int = 5,
+) -> dict:
+    """
+    Hybrid retrieval — combines RAG + web search when needed.
+    
+    Decision logic:
+    - Always run RAG retrieval
+    - If query has temporal signals → also run web search
+    - Merge both context strings for the LLM
+    - Track which sources came from where
+    """
+    # Always retrieve from knowledge base
+    rag_result = await retrieve_with_context(
+        query=query,
+        domain=domain,
+        top_k=top_k,
+    )
+
+    web_results = []
+    web_context = ""
+    used_web_search = False
+
+    # Conditionally add web search
+    if needs_web_search(query):
+        used_web_search = True
+        web_results = await search_web(query, max_results=4)
+        web_context = format_web_results_as_context(web_results)
+
+    # Merge contexts
+    # RAG context comes first (higher authority for cultural/historical)
+    # Web context comes after (for current information)
+    if web_context and rag_result["context_string"]:
+        merged_context = (
+            "## Knowledge Base\n\n"
+            + rag_result["context_string"]
+            + "\n\n## Current Web Sources\n\n"
+            + web_context
+        )
+    elif web_context:
+        merged_context = "## Current Web Sources\n\n" + web_context
+    else:
+        merged_context = rag_result["context_string"]
+
+    return {
+        "query": query,
+        "domain": domain,
+        "chunks": rag_result["chunks"],
+        "web_results": web_results,
+        "context_string": merged_context,
+        "sources_count": len(rag_result["chunks"]) + len(web_results),
+        "used_web_search": used_web_search,
     }
