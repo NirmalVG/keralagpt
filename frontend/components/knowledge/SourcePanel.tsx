@@ -125,7 +125,9 @@ export function SourcePanel() {
 
 /* ── Individual source card ─────────────────────────────────── */
 function SourceCard({ source, index }: { source: Source; index: number }) {
-  const tier = TIER_CONFIG[source.credibility_tier as keyof typeof TIER_CONFIG] ?? TIER_CONFIG.curated
+  const tier =
+    TIER_CONFIG[source.credibility_tier as keyof typeof TIER_CONFIG] ??
+    TIER_CONFIG.curated
   const simPercent = Math.round(source.similarity * 100)
 
   return (

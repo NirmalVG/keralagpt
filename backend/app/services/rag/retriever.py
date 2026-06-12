@@ -10,6 +10,7 @@ Two-stage process:
 from app.services.ingestion.embedder import embed_single
 from app.services.db.supabase_client import get_supabase
 from app.services.rag.web_search import needs_web_search, search_web, format_web_results_as_context
+from app.services.rag.reranker import rerank_chunks
 
 
 async def retrieve_chunks(
@@ -70,12 +71,14 @@ async def retrieve_with_context(
     top_k: int = 5,
 ) -> dict:
     """
-    Higher-level retrieval that returns chunks + structured metadata.
-    Used directly by the chat endpoint.
-
-    Retrieves match_count=20 candidates, then takes top_k after sorting.
-    The reranker (Step 6) will slot in here later between retrieve and top_k.
+    Two-stage retrieval:
+      Stage 1 — bi-encoder cosine search (fast, top-20)
+      Stage 2 — cross-encoder rerank     (precise, top-5)
     """
+
+    # Stage 1: Retrieve 20 candidates via bi-encoder
+    # We deliberately over-fetch (20 instead of 5) to give
+    # the cross-encoder a rich candidate pool to work with.
     candidates = await retrieve_chunks(
         query=query,
         domain=domain,
@@ -83,13 +86,24 @@ async def retrieve_with_context(
         similarity_threshold=0.3,
     )
 
-    # Sort by similarity descending (Supabase RPC returns sorted, but be explicit)
-    candidates.sort(key=lambda x: x["similarity"], reverse=True)
+    if not candidates:
+        return {
+            "query":          query,
+            "domain":         domain,
+            "chunks":         [],
+            "context_string": "",
+            "sources_count":  0,
+        }
 
-    # Take top_k
-    top_chunks = candidates[:top_k]
+    # Stage 2: Cross-encoder rerank — rescores all 20, returns top 5
+    # This is where quality jumps significantly.
+    top_chunks = await rerank_chunks(
+        query=query,
+        chunks=candidates,
+        top_k=top_k,
+    )
 
-    # Build structured context string for the LLM (used in Step 5+)
+    # Build context string for the LLM
     context_parts = []
     for i, chunk in enumerate(top_chunks, 1):
         source_label = f"[Source {i}: {chunk['document_title']}"
@@ -97,16 +111,17 @@ async def retrieve_with_context(
             source_label += f" — {chunk['section_title']}"
         source_label += f" ({chunk['credibility_tier']})]"
 
+        # Include rerank score in debug metadata (not sent to LLM)
         context_parts.append(f"{source_label}\n{chunk['content']}")
 
     context_string = "\n\n---\n\n".join(context_parts)
 
     return {
-        "query": query,
-        "domain": domain,
-        "chunks": top_chunks,
-        "context_string": context_string,      # ready to inject into LLM prompt
-        "sources_count": len(top_chunks),
+        "query":          query,
+        "domain":         domain,
+        "chunks":         top_chunks,
+        "context_string": context_string,
+        "sources_count":  len(top_chunks),
     }
 
 async def retrieve_hybrid(
@@ -114,16 +129,8 @@ async def retrieve_hybrid(
     domain: str | None = None,
     top_k: int = 5,
 ) -> dict:
-    """
-    Hybrid retrieval — combines RAG + web search when needed.
-    
-    Decision logic:
-    - Always run RAG retrieval
-    - If query has temporal signals → also run web search
-    - Merge both context strings for the LLM
-    - Track which sources came from where
-    """
-    # Always retrieve from knowledge base
+
+    # RAG retrieval — now includes cross-encoder reranking
     rag_result = await retrieve_with_context(
         query=query,
         domain=domain,
@@ -134,33 +141,29 @@ async def retrieve_hybrid(
     web_context = ""
     used_web_search = False
 
-    # Conditionally add web search
     if needs_web_search(query):
         used_web_search = True
-        web_results = await search_web(query, max_results=4)
-        web_context = format_web_results_as_context(web_results)
+        web_results = await search_web(query, max_results=3)
+        web_context  = format_web_results_as_context(web_results)
 
-    # Merge contexts
-    # RAG context comes first (higher authority for cultural/historical)
-    # Web context comes after (for current information)
     if web_context and rag_result["context_string"]:
-        merged_context = (
-            "## Knowledge Base\n\n"
+        merged = (
+            "## Knowledge Base (Reranked)\n\n"
             + rag_result["context_string"]
             + "\n\n## Current Web Sources\n\n"
             + web_context
         )
     elif web_context:
-        merged_context = "## Current Web Sources\n\n" + web_context
+        merged = "## Current Web Sources\n\n" + web_context
     else:
-        merged_context = rag_result["context_string"]
+        merged = rag_result["context_string"]
 
     return {
-        "query": query,
-        "domain": domain,
-        "chunks": rag_result["chunks"],
-        "web_results": web_results,
-        "context_string": merged_context,
-        "sources_count": len(rag_result["chunks"]) + len(web_results),
+        "query":           query,
+        "domain":          domain,
+        "chunks":          rag_result["chunks"],
+        "web_results":     web_results,
+        "context_string":  merged,
+        "sources_count":   len(rag_result["chunks"]) + len(web_results),
         "used_web_search": used_web_search,
     }
