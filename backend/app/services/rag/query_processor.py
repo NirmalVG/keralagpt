@@ -16,11 +16,7 @@ import json
 import re
 from groq import AsyncGroq
 from app.services.rag.generator import get_groq_client
-
-VALID_DOMAINS = [
-    "history", "sacred-arts", "spices-trade", "architecture",
-    "festivals", "literature", "cinema", "geography",
-]
+from app.domains import VALID_DOMAINS, normalize_domain
 
 PROCESSOR_SYSTEM_PROMPT = """You are a query analysis engine for KeralaGPT, 
 a Kerala cultural knowledge system.
@@ -35,8 +31,8 @@ Given a user query, return ONLY a JSON object with these exact fields:
                      semantic search — add relevant Kerala cultural context, 
                      related terms, and specifics the user implied but didn't 
                      state. 2-3 sentences max.",
-  "domain": one of: history | sacred-arts | spices-trade | architecture | 
-             festivals | literature | cinema | geography | null,
+  "domain": one of: performing-arts | literature | history | temple-arch |
+             festivals | cuisine | cinema | geography | null,
              (null if the query spans multiple domains or is unclear)
   "domain_confidence": float 0.0-1.0 (how confident you are in the domain),
   "is_conversational": true/false (is this a greeting/small talk, not a knowledge query?),
@@ -70,7 +66,7 @@ async def process_query(
         "expanded_query":    "What is Kathakali dance drama? Explain its 
                               history, costume makeup and performance style 
                               in Kerala",
-        "domain":            "sacred-arts",
+        "domain":            "performing-arts",
         "domain_confidence": 0.96,
         "is_conversational": False,
         "intent":            "explanatory",
@@ -110,8 +106,10 @@ async def process_query(
 
         # User-selected domain always overrides classifier
         if active_domain:
-            domain     = active_domain
+            domain     = normalize_domain(active_domain)
             confidence = 1.0
+        else:
+            domain = normalize_domain(domain)
 
         # Reject low-confidence domain classifications
         if confidence < 0.65:
@@ -140,7 +138,7 @@ async def process_query(
             "language":          "en",
             "english_query":     query,
             "expanded_query":    query,
-            "domain":            active_domain,
+            "domain":            normalize_domain(active_domain),
             "domain_confidence": 1.0 if active_domain else 0.0,
             "is_conversational": False,
             "intent":            "factual",

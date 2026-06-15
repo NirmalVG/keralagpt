@@ -17,5 +17,15 @@ def get_supabase() -> Client:
             raise RuntimeError(
                 "SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in .env"
             )
-        _client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)
+        http_client = httpx.Client(
+            timeout=httpx.Timeout(settings.SUPABASE_HTTP_TIMEOUT),
+            trust_env=True,
+            follow_redirects=True,
+        )
+        options = SyncClientOptions(httpx_client=http_client)
+        _client = create_client(
+            settings.SUPABASE_URL,
+            settings.SUPABASE_SERVICE_KEY,
+            options=options,
+        )
     return _client

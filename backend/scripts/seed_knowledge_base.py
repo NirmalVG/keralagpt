@@ -22,10 +22,11 @@ load_dotenv()
 
 from app.services.ingestion.wikipedia_fetcher import fetch_with_retry
 from app.services.ingestion.ingestor          import ingest_document
+from app.domains import normalize_domain
 
 # ── Article manifest ────────────────────────────────────────────
 WIKIPEDIA_ARTICLES = {
-    "sacred-arts": [
+    "performing-arts": [
         "Kathakali", "Theyyam", "Mohiniyattam", "Koodiyattam",
         "Ottamthullal", "Krishnanattam", "Thiruvathirakali", "Padayani",
     ],
@@ -37,7 +38,7 @@ WIKIPEDIA_ARTICLES = {
         "Malayalam literature", "Kumaran Asan", "Vallathol Narayana Menon",
         "G. Sankara Kurup", "Vaikom Muhammad Basheer", "M. T. Vasudevan Nair",
     ],
-    "architecture": [
+    "temple-arch": [
         "Padmanabhaswamy Temple", "Guruvayur Temple", "Kerala architecture",
         "Koothambalam", "Vadakkunnathan Temple",
     ],
@@ -61,8 +62,8 @@ WIKIPEDIA_ARTICLES = {
 CREDIBILITY_MAP = {
     "history":      "academic",
     "literature":   "academic",
-    "sacred-arts":  "curated",
-    "architecture": "official",
+    "performing-arts":  "curated",
+    "temple-arch": "official",
     "festivals":    "official",
     "cuisine":      "curated",
     "cinema":       "curated",
@@ -185,6 +186,7 @@ async def main(target_domain: str | None = None, limit: int | None = None):
                 continue
 
             try:
+                processed_count += 1
                 result = await ingest_wikipedia_article(title, domain, tier)
 
                 if result:
@@ -194,7 +196,6 @@ async def main(target_domain: str | None = None, limit: int | None = None):
                     total_chunks += chunks_n
                     completed.add(title)
                     save_progress(completed)
-                    processed_count += 1
                 else:
                     print(f"  ✗ Failed:   {title} (article not found)")
                     failed.append(title)
@@ -223,6 +224,9 @@ if __name__ == "__main__":
     parser.add_argument("--domain", type=str, help="Seed a single domain only")
     parser.add_argument("--limit",  type=int, help="Max articles to process")
     args = parser.parse_args()
+
+    if args.domain:
+        args.domain = normalize_domain(args.domain)
 
     if args.domain and args.domain not in WIKIPEDIA_ARTICLES:
         print(f"Unknown domain '{args.domain}'. Choose from: {list(WIKIPEDIA_ARTICLES.keys())}")

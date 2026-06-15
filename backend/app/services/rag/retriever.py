@@ -11,6 +11,7 @@ from app.services.ingestion.embedder import embed_single
 from app.services.db.supabase_client import get_supabase
 from app.services.rag.web_search import needs_web_search, search_web, format_web_results_as_context
 from app.services.rag.reranker import rerank_chunks
+from app.domains import normalize_domain
 
 
 async def retrieve_chunks(
@@ -47,6 +48,7 @@ async def retrieve_chunks(
     # Stage 1: Embed the query
     # CRITICAL: use task_type="search_query" not "search_document"
     # nomic trains these two modes to be compatible but optimized differently
+    domain = normalize_domain(domain)
     query_embedding = await embed_single(query, task_type="search_query")
 
     # Stage 2: Vector search via Supabase RPC

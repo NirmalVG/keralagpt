@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from app.services.ingestion.ingestor import ingest_document
+from app.domains import VALID_DOMAINS, normalize_domain
 
 router = APIRouter(prefix="/ingest", tags=["ingestion"])
 
@@ -19,11 +20,8 @@ class IngestRequest(BaseModel):
 
 @router.post("/document")
 async def ingest_document_endpoint(req: IngestRequest):
-    valid_domains = [
-        "performing-arts", "literature", "history",
-        "temple-arch", "festivals", "cuisine", "cinema", "geography"
-    ]
-    if req.domain not in valid_domains:
+    domain = normalize_domain(req.domain)
+    if domain not in VALID_DOMAINS:
         raise HTTPException(status_code=400, detail=f"Invalid domain: {req.domain}")
 
     valid_tiers = ["official", "academic", "curated", "community"]
@@ -33,7 +31,7 @@ async def ingest_document_endpoint(req: IngestRequest):
     result = await ingest_document(
         title=req.title,
         content=req.content,
-        domain=req.domain,
+        domain=domain,
         credibility_tier=req.credibility_tier,
         author=req.author,
         source_url=req.source_url,

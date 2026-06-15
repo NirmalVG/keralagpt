@@ -28,35 +28,54 @@ async def embed_texts(texts: list[str], task_type: str = "search_document") -> l
     """
     if not texts:
         return []
+    if not settings.NOMIC_API_KEY:
+        raise RuntimeError("NOMIC_API_KEY must be set in backend/.env before generating embeddings")
 
     all_embeddings = []
 
     # Process in batches
     for i in range(0, len(texts), BATCH_SIZE):
         batch = texts[i : i + BATCH_SIZE]
+        tried_urls = [settings.NOMIC_EMBED_URL, "https://api.nomic.ai/v1/embedding/text"]
+        last_exc: Exception | None = None
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                NOMIC_EMBED_URL,
-                headers={
-                    "Authorization": f"Bearer {settings.NOMIC_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": EMBED_MODEL,
-                    "texts": batch,
-                    "task_type": task_type,
-                },
-            )
+        async with httpx.AsyncClient(timeout=30.0, trust_env=True) as client:
+            for url in tried_urls:
+                try:
+                    response = await client.post(
+                        url,
+                        headers={
+                            "Authorization": f"Bearer {settings.NOMIC_API_KEY}",
+                            "Content-Type": "application/json",
+                        },
+                        json={
+                            "model": EMBED_MODEL,
+                            "texts": batch,
+                            "task_type": task_type,
+                        },
+                    )
+                except (httpx.ConnectError, httpx.NetworkError, httpx.RequestError) as exc:
+                    last_exc = exc
+                    print(f"[embedder] Nomic request failed for {url}: {exc}")
+                    continue
+                except httpx.TimeoutException as exc:
+                    raise RuntimeError("Timed out while calling Nomic embeddings API") from exc
 
-            if response.status_code != 200:
+                if response.status_code != 200:
+                    raise RuntimeError(
+                        f"Nomic API error {response.status_code}: {response.text}"
+                    )
+
+                data = response.json()
+                # nomic returns: { "embeddings": [[...], [...], ...] }
+                all_embeddings.extend(data["embeddings"])
+                break
+            else:
+                api_hosts = ", ".join(tried_urls)
                 raise RuntimeError(
-                    f"Nomic API error {response.status_code}: {response.text}"
-                )
-
-            data = response.json()
-            # nomic returns: { "embeddings": [[...], [...], ...] }
-            all_embeddings.extend(data["embeddings"])
+                    "Could not connect to Nomic embeddings API. Check DNS/internet access "
+                    f"for one of: {api_hosts}. Last error: {last_exc}"
+                ) from last_exc
 
     return all_embeddings
 

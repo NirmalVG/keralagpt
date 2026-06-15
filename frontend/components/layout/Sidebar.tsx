@@ -1,13 +1,8 @@
 "use client"
-// components/layout/Sidebar.tsx
-import { useChatStore } from "@/lib/store/chatStore"
 
-// Local fallback for domains (was imported from @/lib/constants)
-const DOMAINS = [
-  { id: "history", label: "History", labelMl: "ചരിത്രം", icon: "📜" },
-  { id: "culture", label: "Culture", labelMl: "സংസ്കാരം", icon: "🕉️" },
-  { id: "trade", label: "Trade", labelMl: "വാണിജ്യം", icon: "⚓" },
-]
+import { useEffect, useState } from "react"
+import { useChatStore } from "@/lib/store/chatStore"
+import { DOMAINS, type RetrievalStats } from "@/lib/types/chat"
 
 const RECENT_THREADS = [
   { id: "1", query: "Mural pigments of Padmanabha...", color: "#C8952A" },
@@ -17,6 +12,45 @@ const RECENT_THREADS = [
 
 export function Sidebar() {
   const { activeDomain, setDomain, clearMessages } = useChatStore()
+  const [stats, setStats] = useState<RetrievalStats | null>(null)
+  const [statsError, setStatsError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadStats() {
+      try {
+        const res = await fetch("/api/retrieval/stats")
+        const data: RetrievalStats = await res.json()
+        if (cancelled) return
+        setStats(data)
+        setStatsError(res.ok ? null : data.message ?? "Backend unavailable")
+      } catch (error) {
+        if (cancelled) return
+        setStatsError(error instanceof Error ? error.message : "Backend unavailable")
+      }
+    }
+
+    loadStats()
+    const timer = window.setInterval(loadStats, 30000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [])
+
+  const totalDocs = stats?.total_documents ?? 0
+  const totalChunks = stats?.total_chunks ?? 0
+  const seededDomains = stats?.documents_by_domain
+    ? Object.keys(stats.documents_by_domain).length
+    : 0
+  const coverage = Math.round((seededDomains / DOMAINS.length) * 100)
+  const statsLabel = statsError
+    ? "Backend unavailable"
+    : totalDocs > 0
+      ? `${totalDocs} docs / ${totalChunks} chunks`
+      : "Knowledge base empty"
 
   return (
     <aside
@@ -33,17 +67,8 @@ export function Sidebar() {
         overflowY: "auto",
       }}
     >
-      {/* ── Logo ─────────────────────────────────────── */}
       <div style={{ padding: "20px 16px 16px" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: 16,
-          }}
-        >
-          {/* Logo icon — amber square with symbol */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
           <div
             style={{
               width: 36,
@@ -55,9 +80,12 @@ export function Sidebar() {
               justifyContent: "center",
               boxShadow: "var(--shadow-gold)",
               flexShrink: 0,
+              color: "#FAF7F2",
+              fontFamily: "var(--font-ui)",
+              fontWeight: 700,
             }}
           >
-            <span style={{ fontSize: 16 }}>⊚</span>
+            K
           </div>
           <div>
             <div
@@ -66,10 +94,9 @@ export function Sidebar() {
                 fontWeight: 600,
                 fontSize: 13,
                 color: "var(--text-primary)",
-                letterSpacing: "-0.01em",
               }}
             >
-              Terminal v1.0
+              KeralaGPT
             </div>
             <div
               style={{
@@ -81,12 +108,11 @@ export function Sidebar() {
                 textTransform: "uppercase",
               }}
             >
-              Ancient Futurism Engine
+              Cultural Intelligence
             </div>
           </div>
         </div>
 
-        {/* New Insight button */}
         <button
           onClick={clearMessages}
           style={{
@@ -100,44 +126,14 @@ export function Sidebar() {
             fontWeight: 500,
             fontSize: 13,
             cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--gold-mid)"
-            e.currentTarget.style.transform = "translateY(-1px)"
-            e.currentTarget.style.boxShadow = "var(--shadow-gold)"
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--gold-dark)"
-            e.currentTarget.style.transform = "translateY(0)"
-            e.currentTarget.style.boxShadow = "none"
           }}
         >
-          <span style={{ fontSize: 16, lineHeight: 1 }}>+</span>
-          New Insight
+          + New Insight
         </button>
       </div>
 
-      {/* ── Active Domains ────────────────────────────── */}
       <div style={{ padding: "8px 0" }}>
-        <div
-          style={{
-            padding: "0 16px 8px",
-            fontFamily: "var(--font-ui)",
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--text-muted)",
-          }}
-        >
-          Active Domains
-        </div>
-
+        <SectionLabel>Active Domains</SectionLabel>
         {DOMAINS.map((domain) => {
           const isActive = activeDomain?.id === domain.id
           return (
@@ -154,22 +150,20 @@ export function Sidebar() {
                 borderLeft: isActive
                   ? "3px solid var(--gold-light)"
                   : "3px solid transparent",
-                background: isActive
-                  ? "var(--bg-domain-active)"
-                  : "transparent",
+                background: isActive ? "var(--bg-domain-active)" : "transparent",
                 cursor: "pointer",
-                transition: "all 0.15s ease",
                 textAlign: "left",
               }}
-              onMouseEnter={(e) => {
-                if (!isActive)
-                  e.currentTarget.style.background = "rgba(107,68,16,0.06)"
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) e.currentTarget.style.background = "transparent"
-              }}
             >
-              <span style={{ fontSize: 14, opacity: isActive ? 1 : 0.7 }}>
+              <span
+                style={{
+                  width: 24,
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: isActive ? "var(--gold-dark)" : "var(--text-muted)",
+                }}
+              >
                 {domain.icon}
               </span>
               <span
@@ -177,9 +171,7 @@ export function Sidebar() {
                   fontFamily: "var(--font-ui)",
                   fontSize: 13,
                   fontWeight: isActive ? 500 : 400,
-                  color: isActive
-                    ? "var(--gold-dark)"
-                    : "var(--text-secondary)",
+                  color: isActive ? "var(--gold-dark)" : "var(--text-secondary)",
                 }}
               >
                 {domain.label}
@@ -189,7 +181,6 @@ export function Sidebar() {
         })}
       </div>
 
-      {/* ── Recent Threads ────────────────────────────── */}
       <div
         style={{
           padding: "16px 0 8px",
@@ -197,20 +188,7 @@ export function Sidebar() {
           marginTop: 8,
         }}
       >
-        <div
-          style={{
-            padding: "0 16px 8px",
-            fontFamily: "var(--font-ui)",
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--text-muted)",
-          }}
-        >
-          Recent Threads
-        </div>
-
+        <SectionLabel>Recent Threads</SectionLabel>
         {RECENT_THREADS.map((thread) => (
           <button
             key={thread.id}
@@ -223,17 +201,9 @@ export function Sidebar() {
               border: "none",
               background: "transparent",
               cursor: "pointer",
-              transition: "background 0.15s ease",
               textAlign: "left",
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(107,68,16,0.06)"
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent"
-            }}
           >
-            {/* Colored dot */}
             <span
               style={{
                 width: 6,
@@ -241,7 +211,6 @@ export function Sidebar() {
                 borderRadius: "50%",
                 background: thread.color,
                 flexShrink: 0,
-                marginTop: 1,
               }}
             />
             <span
@@ -260,16 +229,14 @@ export function Sidebar() {
         ))}
       </div>
 
-      {/* ── Spacer ────────────────────────────────────── */}
       <div style={{ flex: 1 }} />
 
-      {/* ── Knowledge Base Stats ──────────────────────── */}
       <div style={{ padding: "12px 16px" }}>
         <div
           style={{
             background: "var(--bg-card)",
             border: "1px solid var(--border-subtle)",
-            borderRadius: 10,
+            borderRadius: 8,
             padding: "12px 14px",
             boxShadow: "var(--shadow-xs)",
           }}
@@ -286,9 +253,8 @@ export function Sidebar() {
               color: "var(--text-secondary)",
             }}
           >
-            <span>📚</span> Knowledge Base Stats
+            <span>KB</span> Knowledge Base Stats
           </div>
-          {/* Progress bar */}
           <div
             style={{
               height: 4,
@@ -299,7 +265,7 @@ export function Sidebar() {
           >
             <div
               style={{
-                width: "87%",
+                width: `${coverage}%`,
                 height: "100%",
                 borderRadius: 100,
                 background:
@@ -311,61 +277,35 @@ export function Sidebar() {
             style={{
               display: "flex",
               justifyContent: "space-between",
+              gap: 8,
               fontFamily: "var(--font-ui)",
               fontSize: 10,
               color: "var(--text-muted)",
             }}
           >
-            <span>Index Synchronized</span>
-            <span>87% Coverage</span>
+            <span>{statsLabel}</span>
+            <span>{coverage}% Coverage</span>
           </div>
         </div>
       </div>
-
-      {/* ── Bottom links ──────────────────────────────── */}
-      <div
-        style={{
-          padding: "4px 0 16px",
-          borderTop: "1px solid var(--border-subtle)",
-        }}
-      >
-        {[
-          { icon: "📖", label: "Documentation" },
-          { icon: "💬", label: "Support" },
-        ].map((item) => (
-          <button
-            key={item.label}
-            style={{
-              width: "100%",
-              padding: "9px 16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              transition: "background 0.15s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(107,68,16,0.06)"
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent"
-            }}
-          >
-            <span style={{ fontSize: 13 }}>{item.icon}</span>
-            <span
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: 13,
-                color: "var(--text-secondary)",
-              }}
-            >
-              {item.label}
-            </span>
-          </button>
-        ))}
-      </div>
     </aside>
+  )
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        padding: "0 16px 8px",
+        fontFamily: "var(--font-ui)",
+        fontSize: 10,
+        fontWeight: 600,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color: "var(--text-muted)",
+      }}
+    >
+      {children}
+    </div>
   )
 }

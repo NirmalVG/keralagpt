@@ -4,7 +4,7 @@ Exposes the retrieval pipeline as an HTTP endpoint.
 Useful for testing retrieval quality independently of the LLM.
 """
 from fastapi import APIRouter, Query
-from app.services.rag.retriever import retrieve_with_context
+from app.services.rag.retriever import retrieve_chunks, retrieve_with_context
 from app.services.db.supabase_client import get_supabase
 from app.services.rag.reranker import rerank_chunks
 from app.services.rag.query_processor import process_query

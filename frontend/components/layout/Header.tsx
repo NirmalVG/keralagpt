@@ -1,11 +1,48 @@
 "use client"
 // components/layout/Header.tsx
+import { useEffect, useState } from "react"
 import { useChatStore } from "@/lib/store/chatStore"
 
 const NAV_ITEMS = ["Heritage", "Language", "Tradition", "Geography"]
 
 export function Header() {
   const { isDark, toggleTheme } = useChatStore()
+  const [apiStatus, setApiStatus] = useState<"checking" | "ok" | "error">("checking")
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function checkHealth() {
+      try {
+        const res = await fetch("/api/health")
+        const data = await res.json()
+        if (!cancelled) setApiStatus(res.ok && data.status === "ok" ? "ok" : "error")
+      } catch {
+        if (!cancelled) setApiStatus("error")
+      }
+    }
+
+    checkHealth()
+    const timer = window.setInterval(checkHealth, 30000)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [])
+
+  const statusColor =
+    apiStatus === "ok"
+      ? "var(--jade)"
+      : apiStatus === "checking"
+        ? "var(--gold-mid)"
+        : "var(--crimson)"
+  const statusLabel =
+    apiStatus === "ok"
+      ? "Backend online"
+      : apiStatus === "checking"
+        ? "Checking backend"
+        : "Backend offline"
 
   return (
     <header
@@ -74,6 +111,32 @@ export function Header() {
 
       {/* ── Right Controls ────────────────────── */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          title={statusLabel}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "5px 9px",
+            borderRadius: 100,
+            border: "1px solid var(--border-subtle)",
+            fontFamily: "var(--font-ui)",
+            fontSize: 11,
+            color: "var(--text-secondary)",
+          }}
+        >
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: statusColor,
+              display: "inline-block",
+            }}
+          />
+          {statusLabel}
+        </div>
+
         {/* Dark / Light Mode Toggle */}
         <button
           onClick={toggleTheme}

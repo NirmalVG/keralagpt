@@ -68,3 +68,11 @@ export type RecentThread = {
   color: string
   createdAt: Date
 }
+
+export type RetrievalStats = {
+  total_documents: number
+  total_chunks: number
+  documents_by_domain: Record<string, number>
+  status?: string
+  message?: string
+}
