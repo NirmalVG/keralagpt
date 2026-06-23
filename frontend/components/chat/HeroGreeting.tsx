@@ -50,28 +50,10 @@ export function HeroGreeting() {
         justifyContent: "center",
         padding: "40px 32px",
         overflowY: "auto",
+        minHeight: 0,
         animation: "fade-up 0.4s ease-out",
       }}
     >
-      {/* Logo icon */}
-      <div
-        style={{
-          width: 72,
-          height: 72,
-          borderRadius: 16,
-          background: "var(--bg-card)",
-          border: "1px solid var(--border-gold)",
-          boxShadow: "var(--shadow-md)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 28,
-          marginBottom: 24,
-        }}
-      >
-        ◉
-      </div>
-
       {/* Brand name */}
       <h1
         style={{

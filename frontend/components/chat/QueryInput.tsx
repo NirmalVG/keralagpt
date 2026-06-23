@@ -37,7 +37,14 @@ export function QueryInput() {
   }
 
   return (
-    <div style={{ padding: "0 28px 20px" }}>
+    <div
+      style={{
+        padding: "12px 28px 24px",
+        maxWidth: 820,
+        margin: "0 auto",
+        width: "100%",
+      }}
+    >
       {/* ── Input container ─────────────────────────── */}
       <div
         style={{
@@ -49,7 +56,7 @@ export function QueryInput() {
             ? "1.5px solid var(--gold-light)"
             : "1.5px solid var(--border-default)",
           borderRadius: 16,
-          padding: "10px 10px 10px 16px",
+          padding: "12px 12px 12px 18px",
           boxShadow: focused ? "var(--shadow-gold)" : "var(--shadow-sm)",
           transition: "all 0.2s ease",
         }}

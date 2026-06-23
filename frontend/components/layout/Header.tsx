@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react"
 import { useChatStore } from "@/lib/store/chatStore"
 
-const NAV_ITEMS = ["Heritage", "Language", "Tradition", "Geography"]
-
 export function Header() {
-  const { isDark, toggleTheme } = useChatStore()
+  const { isDark, toggleTheme, toggleSidebar, toggleSourcePanel } = useChatStore()
   const [apiStatus, setApiStatus] = useState<"checking" | "ok" | "error">("checking")
 
   useEffect(() => {
@@ -49,7 +47,9 @@ export function Header() {
       style={{
         height: "var(--header-height)",
         borderBottom: "1px solid var(--border-subtle)",
-        background: "rgba(247, 242, 234, 0.85)",
+        background: isDark
+          ? "rgba(12, 9, 14, 0.85)"
+          : "rgba(247, 242, 234, 0.85)",
         backdropFilter: "blur(20px) saturate(160%)",
         WebkitBackdropFilter: "blur(20px) saturate(160%)",
         display: "flex",
@@ -62,24 +62,63 @@ export function Header() {
         transition: "background 0.6s ease",
       }}
     >
-      {/* ── Logo ──────────────────────────────── */}
-      <div
-        style={{
-          fontFamily: "var(--font-display)",
-          fontSize: 22,
-          color: "var(--gold-dark)",
-          letterSpacing: "-0.02em",
-          flexShrink: 0,
-        }}
-      >
-        KeralaGPT
+      {/* ── Left: Hamburger + Logo ──────────────────── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {/* Sidebar toggle (hamburger) */}
+        <button
+          onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: "1px solid var(--border-subtle)",
+            background: "transparent",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 16,
+            color: "var(--text-secondary)",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--bg-card)"
+            e.currentTarget.style.borderColor = "var(--border-gold)"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent"
+            e.currentTarget.style.borderColor = "var(--border-subtle)"
+          }}
+        >
+          ☰
+        </button>
+
+        <a
+          href="/"
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: 22,
+            color: "var(--gold-dark)",
+            letterSpacing: "-0.02em",
+            textDecoration: "none",
+            flexShrink: 0,
+          }}
+        >
+          KeralaGPT
+        </a>
       </div>
 
-      {/* ── Domain Nav ────────────────────────── */}
+      {/* ── Center: Nav Links ────────────────────────── */}
       <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
-        {NAV_ITEMS.map((item, i) => (
-          <button
-            key={item}
+        {[
+          { label: "Chat", href: "/" },
+          { label: "Explore", href: "/explore" },
+          { label: "Contribute", href: "/contribute" },
+        ].map((item) => (
+          <a
+            key={item.label}
+            href={item.href}
             style={{
               padding: "6px 14px",
               border: "none",
@@ -87,25 +126,23 @@ export function Header() {
               cursor: "pointer",
               fontFamily: "var(--font-ui)",
               fontSize: 13,
-              fontWeight: i === 0 ? 500 : 400,
-              color: i === 0 ? "var(--gold-dark)" : "var(--text-secondary)",
-              borderBottom:
-                i === 0
-                  ? "2px solid var(--gold-light)"
-                  : "2px solid transparent",
-              borderRadius: 0,
-              paddingBottom: 4,
+              fontWeight: 400,
+              color: "var(--text-secondary)",
+              textDecoration: "none",
+              borderRadius: 6,
               transition: "all 0.15s ease",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = "var(--gold-dark)"
+              e.currentTarget.style.background = "var(--bg-elevated)"
             }}
             onMouseLeave={(e) => {
-              if (i !== 0) e.currentTarget.style.color = "var(--text-secondary)"
+              e.currentTarget.style.color = "var(--text-secondary)"
+              e.currentTarget.style.background = "transparent"
             }}
           >
-            {item}
-          </button>
+            {item.label}
+          </a>
         ))}
       </nav>
 
@@ -136,6 +173,37 @@ export function Header() {
           />
           {statusLabel}
         </div>
+
+        {/* Source panel toggle */}
+        <button
+          onClick={toggleSourcePanel}
+          aria-label="Toggle source panel"
+          title="Toggle sources"
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: "1px solid var(--border-subtle)",
+            background: "transparent",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 14,
+            color: "var(--text-secondary)",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--bg-card)"
+            e.currentTarget.style.borderColor = "var(--border-gold)"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent"
+            e.currentTarget.style.borderColor = "var(--border-subtle)"
+          }}
+        >
+          📚
+        </button>
 
         {/* Dark / Light Mode Toggle */}
         <button
@@ -177,34 +245,6 @@ export function Header() {
           >
             {isDark ? "✦" : "☀"}
           </span>
-        </button>
-
-        {/* Settings */}
-        <button
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            border: "1px solid var(--border-subtle)",
-            background: "transparent",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 14,
-            color: "var(--text-secondary)",
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--bg-card)"
-            e.currentTarget.style.borderColor = "var(--border-gold)"
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent"
-            e.currentTarget.style.borderColor = "var(--border-subtle)"
-          }}
-        >
-          ⚙
         </button>
       </div>
     </header>

@@ -1,9 +1,12 @@
 "use client"
 // components/chat/MessageBubble.tsx
 import type { Message } from "@/lib/store/chatStore"
+import { FeedbackButtons } from "./FeedbackButtons"
+import { FollowUpQuestions } from "./FollowUpQuestions"
 
 interface Props {
   message: Message
+  isLast?: boolean
 }
 
 const CONFIDENCE_CONFIG = {
@@ -24,7 +27,7 @@ const CONFIDENCE_CONFIG = {
   },
 }
 
-export function MessageBubble({ message }: Props) {
+export function MessageBubble({ message, isLast }: Props) {
   const isUser = message.role === "user"
 
   if (isUser) {
@@ -160,6 +163,23 @@ export function MessageBubble({ message }: Props) {
             </span>
           </div>
         )}
+
+        {/* Feedback buttons — show on every completed assistant message */}
+        {!message.isStreaming && (
+          <FeedbackButtons
+            messageId={message.id}
+            currentFeedback={message.feedback}
+            conversationId={message.conversationId}
+          />
+        )}
+
+        {/* Follow-up questions — show on last assistant message only */}
+        {isLast &&
+          !message.isStreaming &&
+          message.followUpQuestions &&
+          message.followUpQuestions.length > 0 && (
+            <FollowUpQuestions questions={message.followUpQuestions} />
+          )}
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ Design principles:
 3. Acknowledge uncertainty — if context doesn't cover the query, say so honestly
 4. Kerala identity — the model's persona reflects the platform's cultural purpose
 5. Bilingual awareness — respond in the language the user asked in
+6. Follow-up questions — suggest 3 related questions after every answer
 """
 
 SYSTEM_PROMPT = """You are Samskriti, an AI scholar specializing in Kerala's cultural heritage, history, performing arts, literature, cinema, and traditions. You were created by Weblyr AI.
@@ -39,11 +40,16 @@ CORE RULES — follow these absolutely:
    Write in clear, flowing prose. Avoid bullet points unless listing genuinely enumerable items.
    Treat Kerala's culture with the depth and respect it deserves.
 
+6. FOLLOW-UP QUESTIONS
+   At the very end of your response, after the CONFIDENCE line, suggest exactly 3 follow-up questions the user might want to ask next. These should be related to the current topic and encourage deeper exploration of Kerala's culture. Format them on a single line as:
+   FOLLOW_UP: question one | question two | question three
+
 FORMAT YOUR RESPONSE AS:
 - A direct answer in prose
 - Source citations inline as [N]
 - At the end, on a new line: CONFIDENCE: High / Medium / Low
   (High = context fully covers the query, Medium = partial coverage, Low = minimal coverage)
+- Then: FOLLOW_UP: question1 | question2 | question3
 """
 
 
@@ -77,3 +83,17 @@ def extract_confidence(text: str) -> str:
     elif "confidence: low" in lower:
         return "low"
     return "medium"
+
+
+def extract_follow_ups(text: str) -> list[str]:
+    """
+    Parses the FOLLOW_UP: q1 | q2 | q3 line from the model's response.
+    Returns a list of follow-up question strings.
+    """
+    import re
+    match = re.search(r"FOLLOW_UP:\s*(.+)", text, re.IGNORECASE)
+    if match:
+        raw = match.group(1).strip()
+        questions = [q.strip() for q in raw.split("|") if q.strip()]
+        return questions[:3]  # Cap at 3
+    return []

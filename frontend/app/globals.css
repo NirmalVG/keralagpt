@@ -253,3 +253,29 @@ body {
   vertical-align: text-bottom;
   animation: cursor-blink 1s step-end infinite;
 }
+
+/* ── Input focus styles ────────────────────────────────────── */
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--gold-light) !important;
+  box-shadow: 0 0 0 3px rgba(200, 149, 42, 0.12);
+}
+
+/* ── Responsive: Tablet (≤1024px) ──────────────────────────── */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 0px;
+    --source-width: 0px;
+  }
+}
+
+/* ── Responsive: Mobile (≤768px) ───────────────────────────── */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+    --source-width: 0px;
+    --header-height: 52px;
+  }
+}
+

@@ -2,18 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useChatStore } from "@/lib/store/chatStore"
-import { DOMAINS, type RetrievalStats } from "@/lib/types/chat"
-
-const RECENT_THREADS = [
-  { id: "1", query: "Mural pigments of Padmanabha...", color: "#C8952A" },
-  { id: "2", query: "Evolution of Mohiniyattam", color: "#8B2010" },
-  { id: "3", query: "Spice trade routes of Malabar", color: "#1A6B3C" },
-]
+import { DOMAINS, type RetrievalStats, type ConversationSummary } from "@/lib/types/chat"
 
 export function Sidebar() {
-  const { activeDomain, setDomain, clearMessages } = useChatStore()
+  const { activeDomain, setDomain, clearMessages, sidebarOpen } = useChatStore()
   const [stats, setStats] = useState<RetrievalStats | null>(null)
   const [statsError, setStatsError] = useState<string | null>(null)
+  const [conversations, setConversations] = useState<ConversationSummary[]>([])
 
   useEffect(() => {
     let cancelled = false
@@ -31,8 +26,24 @@ export function Sidebar() {
       }
     }
 
+    async function loadConversations() {
+      try {
+        const res = await fetch("/api/conversations")
+        if (res.ok) {
+          const data: ConversationSummary[] = await res.json()
+          if (!cancelled) setConversations(data)
+        }
+      } catch {
+        // Silently fail — conversations are non-critical
+      }
+    }
+
     loadStats()
-    const timer = window.setInterval(loadStats, 30000)
+    loadConversations()
+    const timer = window.setInterval(() => {
+      loadStats()
+      loadConversations()
+    }, 30000)
 
     return () => {
       cancelled = true
@@ -51,6 +62,20 @@ export function Sidebar() {
     : totalDocs > 0
       ? `${totalDocs} docs / ${totalChunks} chunks`
       : "Knowledge base empty"
+
+  // Domain colors for conversation dots
+  const domainColors: Record<string, string> = {
+    "performing-arts": "#C8952A",
+    "literature": "#1A4A7A",
+    "history": "#8B2010",
+    "temple-arch": "#6B2D8B",
+    "festivals": "#1A6B3C",
+    "cuisine": "#B87333",
+    "cinema": "#7C3AED",
+    "geography": "#2D8B6B",
+  }
+
+  if (!sidebarOpen) return null
 
   return (
     <aside
@@ -126,10 +151,32 @@ export function Sidebar() {
             fontWeight: 500,
             fontSize: 13,
             cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.opacity = "0.9"
+            e.currentTarget.style.transform = "translateY(-1px)"
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "1"
+            e.currentTarget.style.transform = "translateY(0)"
           }}
         >
           + New Insight
         </button>
+      </div>
+
+      {/* ── Navigation Links ─────────────────────── */}
+      <div
+        style={{
+          padding: "0 16px 12px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        <NavLink href="/explore" icon="🧭" label="Explore Domains" />
+        <NavLink href="/contribute" icon="📝" label="Contribute Knowledge" />
       </div>
 
       <div style={{ padding: "8px 0" }}>
@@ -153,15 +200,24 @@ export function Sidebar() {
                 background: isActive ? "var(--bg-domain-active)" : "transparent",
                 cursor: "pointer",
                 textAlign: "left",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = "var(--bg-elevated)"
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.background = "transparent"
+                }
               }}
             >
               <span
                 style={{
                   width: 24,
-                  fontFamily: "var(--font-ui)",
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: isActive ? "var(--gold-dark)" : "var(--text-muted)",
+                  fontSize: 14,
+                  textAlign: "center",
                 }}
               >
                 {domain.icon}
@@ -181,6 +237,7 @@ export function Sidebar() {
         })}
       </div>
 
+      {/* ── Recent Threads ───────────────────────── */}
       <div
         style={{
           padding: "16px 0 8px",
@@ -189,48 +246,72 @@ export function Sidebar() {
         }}
       >
         <SectionLabel>Recent Threads</SectionLabel>
-        {RECENT_THREADS.map((thread) => (
-          <button
-            key={thread.id}
+        {conversations.length === 0 ? (
+          <div
             style={{
-              width: "100%",
               padding: "8px 16px",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              textAlign: "left",
+              fontFamily: "var(--font-ui)",
+              fontSize: 11,
+              color: "var(--text-muted)",
+              fontStyle: "italic",
             }}
           >
-            <span
+            No conversations yet
+          </div>
+        ) : (
+          conversations.slice(0, 8).map((convo) => (
+            <button
+              key={convo.id}
               style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: thread.color,
-                flexShrink: 0,
+                width: "100%",
+                padding: "8px 16px",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "all 0.15s ease",
               }}
-            />
-            <span
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontSize: 12,
-                color: "var(--text-secondary)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--bg-elevated)"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent"
               }}
             >
-              {thread.query}
-            </span>
-          </button>
-        ))}
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: "50%",
+                  background: domainColors[convo.domain ?? ""] ?? "var(--gold-light)",
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "var(--font-ui)",
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {convo.query.length > 35
+                  ? convo.query.slice(0, 35) + "..."
+                  : convo.query}
+              </span>
+            </button>
+          ))
+        )}
       </div>
 
       <div style={{ flex: 1 }} />
 
+      {/* ── Knowledge Base Stats ──────────────── */}
       <div style={{ padding: "12px 16px" }}>
         <div
           style={{
@@ -270,6 +351,7 @@ export function Sidebar() {
                 borderRadius: 100,
                 background:
                   "linear-gradient(90deg, var(--gold-light), var(--gold-mid))",
+                transition: "width 0.6s ease",
               }}
             />
           </div>
@@ -307,5 +389,36 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
     >
       {children}
     </div>
+  )
+}
+
+function NavLink({ href, icon, label }: { href: string; icon: string; label: string }) {
+  return (
+    <a
+      href={href}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        padding: "9px 12px",
+        borderRadius: 8,
+        textDecoration: "none",
+        fontFamily: "var(--font-ui)",
+        fontSize: 13,
+        color: "var(--text-secondary)",
+        transition: "all 0.15s ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--bg-elevated)"
+        e.currentTarget.style.color = "var(--gold-dark)"
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent"
+        e.currentTarget.style.color = "var(--text-secondary)"
+      }}
+    >
+      <span style={{ fontSize: 14 }}>{icon}</span>
+      {label}
+    </a>
   )
 }

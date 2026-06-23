@@ -1,10 +1,29 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
   title: "KeralaGPT — Samskriti",
-  description: "3,000 years of Kerala culture, arts, history, and wisdom.",
-  keywords: ["Kerala", "culture", "heritage", "AI", "Samskriti"],
+  description:
+    "Kerala Cultural Intelligence Platform — 3,000 years of culture, arts, history, and wisdom powered by AI.",
+  keywords: [
+    "Kerala",
+    "culture",
+    "heritage",
+    "AI",
+    "Samskriti",
+    "Kathakali",
+    "Theyyam",
+    "Malayalam",
+    "history",
+    "performing arts",
+  ],
+  authors: [{ name: "Weblyr AI" }],
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({
@@ -19,6 +38,13 @@ export default function RootLayout({
         on <html> from localStorage before React hydrates, to prevent flash.
       */}
       <head>
+        {/* Preconnect to Google Fonts for performance */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
         {/* Inline script — runs before React hydrates, prevents dark mode flash */}
         <script
           dangerouslySetInnerHTML={{

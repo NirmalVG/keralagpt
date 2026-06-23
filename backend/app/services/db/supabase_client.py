@@ -1,4 +1,6 @@
+import httpx
 from supabase import create_client, Client
+from supabase._sync.client import ClientOptions
 from app.config import settings
 
 _client: Client | None = None
@@ -22,7 +24,7 @@ def get_supabase() -> Client:
             trust_env=True,
             follow_redirects=True,
         )
-        options = SyncClientOptions(httpx_client=http_client)
+        options = ClientOptions(httpx_client=http_client)
         _client = create_client(
             settings.SUPABASE_URL,
             settings.SUPABASE_SERVICE_KEY,

@@ -13,5 +13,6 @@ class Settings:
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
     COHERE_API_KEY: str = os.getenv("COHERE_API_KEY", "")
+    SUPABASE_HTTP_TIMEOUT: float = float(os.getenv("SUPABASE_HTTP_TIMEOUT", "30"))
 
 settings = Settings()

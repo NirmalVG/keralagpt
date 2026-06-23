@@ -10,6 +10,7 @@ export function useChat() {
     finalizeMessage,
     setStreaming,
     activeDomain,
+    sessionId,
   } = useChatStore()
 
   const sendMessage = async (query: string) => {
@@ -22,8 +23,9 @@ export function useChat() {
     })
 
     // 2. Blank assistant placeholder — fills via stream
+    const assistantId = crypto.randomUUID()
     addMessage({
-      id: crypto.randomUUID(),
+      id: assistantId,
       role: "assistant",
       content: "",
       isStreaming: true,
@@ -36,7 +38,11 @@ export function useChat() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, domain: activeDomain?.id ?? null }),
+        body: JSON.stringify({
+          query,
+          domain: activeDomain?.id ?? null,
+          session_id: sessionId,
+        }),
       })
 
       if (!res.body) throw new Error("No response body")
@@ -45,6 +51,7 @@ export function useChat() {
       const decoder = new TextDecoder()
       let buffer = ""
       let streamDone = false
+      let followUps: string[] = []
 
       while (!streamDone) {
         const { done, value } = await reader.read()
@@ -66,6 +73,17 @@ export function useChat() {
             break
           }
 
+          // Parse follow-up questions
+          if (payload.startsWith("[FOLLOWUPS]")) {
+            const json = payload.slice(11, payload.lastIndexOf("[/FOLLOWUPS]"))
+            try {
+              followUps = JSON.parse(json)
+            } catch {
+              followUps = []
+            }
+            continue
+          }
+
           if (payload.startsWith("[SOURCES]")) {
             const json = payload.slice(9, payload.lastIndexOf("[/SOURCES]"))
             try {
@@ -78,9 +96,9 @@ export function useChat() {
                 : lower.includes("confidence: low")
                   ? "low"
                   : "medium"
-              finalizeMessage(sources, confidence)
+              finalizeMessage(sources, confidence, followUps)
             } catch {
-              finalizeMessage([], "medium")
+              finalizeMessage([], "medium", followUps)
             }
             continue
           }
@@ -94,7 +112,7 @@ export function useChat() {
     } finally {
       const lastMessage = useChatStore.getState().messages.at(-1)
       if (lastMessage?.role === "assistant" && lastMessage.isStreaming) {
-        finalizeMessage(lastMessage.sources ?? [], lastMessage.confidence ?? "medium")
+        finalizeMessage(lastMessage.sources ?? [], lastMessage.confidence ?? "medium", lastMessage.followUpQuestions)
       }
       setStreaming(false)
     }

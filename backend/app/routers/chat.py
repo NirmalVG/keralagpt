@@ -16,6 +16,7 @@ class ChatRequest(BaseModel):
     query:  str
     domain: str | None = None
     top_k:  int        = 5
+    session_id: str | None = None
 
 
 @router.post("/")
@@ -27,67 +28,92 @@ async def chat(req: ChatRequest):
     3. Generate        → Groq streaming → SSE
     """
 
-    # ── Stage 1: Query Processing ──────────────────────────────
-    processed = await process_query(
-        query=req.query,
-        active_domain=req.domain,
-    )
+    try:
+        # ── Stage 1: Query Processing ──────────────────────────────
+        processed = await process_query(
+            query=req.query,
+            active_domain=req.domain,
+        )
 
-    # Handle conversational queries without touching RAG
-    if processed["is_conversational"]:
-        response_text = build_conversational_response(req.query)
+        # Handle conversational queries without touching RAG
+        if processed["is_conversational"]:
+            response_text = build_conversational_response(req.query)
 
-        async def convo_stream():
-            # Stream the conversational response token by token
-            words = response_text.split(" ")
-            for i, word in enumerate(words):
-                token = word if i == 0 else " " + word
-                yield f"data: {token}\n\n"
-            yield "data: [SOURCES][][/SOURCES]\n\n"
-            yield "data: [DONE]\n\n"
+            async def convo_stream():
+                # Stream the conversational response token by token
+                words = response_text.split(" ")
+                for i, word in enumerate(words):
+                    token = word if i == 0 else " " + word
+                    yield f"data: {token}\n\n"
+                yield "data: [FOLLOWUPS][\"What are the performing arts of Kerala?\",\"Tell me about Kerala's history\",\"What is the significance of Onam?\"]\n[/FOLLOWUPS]\n\n"
+                yield "data: [SOURCES][]\n[/SOURCES]\n\n"
+                yield "data: [DONE]\n\n"
 
-        return StreamingResponse(convo_stream(), media_type="text/event-stream")
+            return StreamingResponse(convo_stream(), media_type="text/event-stream")
 
-    # ── Stage 2: Hybrid Retrieval (using expanded query) ───────
-    # KEY DECISION: we retrieve using expanded_query (richer signal)
-    # but we respond to the original query (user's actual words)
-    retrieval_result = await retrieve_hybrid(
-        query=processed["expanded_query"],   # expanded for retrieval
-        domain=processed["domain"],          # auto-classified or user-selected
-        top_k=req.top_k,
-    )
+        # ── Stage 2: Hybrid Retrieval (using expanded query) ───────
+        retrieval_result = await retrieve_hybrid(
+            query=processed["expanded_query"],
+            domain=processed["domain"],
+            top_k=req.top_k,
+        )
 
-    context_string = retrieval_result["context_string"]
-    sources        = retrieval_result["chunks"]
-    web_results    = retrieval_result["web_results"]
+        context_string = retrieval_result["context_string"]
+        sources        = retrieval_result["chunks"]
+        web_results    = retrieval_result["web_results"]
 
-    # ── Stage 3: Handle empty retrieval ────────────────────────
-    if not sources and not web_results:
-        async def empty_stream():
-            msg = (
-                "I don't have enough information about this topic in my "
-                "current knowledge base. Try asking about Kerala's performing "
-                "arts, history, festivals, literature, cuisine, or cinema."
+        # ── Stage 3: Handle empty retrieval ────────────────────────
+        #    Fallback: use LLM's own knowledge when KB is empty
+        if not sources and not web_results:
+            fallback_context = (
+                "The knowledge base returned no results for this query. "
+                "Answer using your general knowledge about Kerala's culture, "
+                "history, arts, cuisine, geography, and traditions. "
+                "Be factual and specific. Note that this answer is from "
+                "general knowledge, not from the curated knowledge base."
             )
-            for word in msg.split():
-                yield f"data: {word} \n\n"
-            yield "data: [SOURCES][][/SOURCES]\n\n"
-            yield "data: [DONE]\n\n"
-        return StreamingResponse(empty_stream(), media_type="text/event-stream")
+            return StreamingResponse(
+                stream_answer(
+                    query=req.query,
+                    context_string=fallback_context,
+                    sources=[],
+                    web_results=web_results,
+                    session_id=req.session_id,
+                    domain=processed["domain"],
+                ),
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control":    "no-cache",
+                    "X-Accel-Buffering": "no",
+                },
+            )
 
-    # ── Stage 4: Stream generation ──────────────────────────────
-    # Pass original query to LLM (respond in user's language/style)
-    # but the context was retrieved using the expanded query
-    return StreamingResponse(
-        stream_answer(
-            query=req.query,        # original — LLM responds to this
-            context_string=context_string,
-            sources=sources,
-            web_results=web_results,
-        ),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control":    "no-cache",
-            "X-Accel-Buffering": "no",
-        },
-    )
+        # ── Stage 4: Stream generation ──────────────────────────────
+        return StreamingResponse(
+            stream_answer(
+                query=req.query,
+                context_string=context_string,
+                sources=sources,
+                web_results=web_results,
+                session_id=req.session_id,
+                domain=processed["domain"],
+            ),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control":    "no-cache",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    except Exception as e:
+        print(f"[chat] Pipeline error: {e}")
+        error_msg = f"Backend connection error: {str(e)[:120]}. Please check your internet connection and try again."
+
+        async def error_stream():
+            for word in error_msg.split():
+                yield f"data: {word} \n\n"
+            yield "data: [FOLLOWUPS][\"What is Kathakali?\",\"Tell me about Kerala's history\",\"What is Onam?\"]\n[/FOLLOWUPS]\n\n"
+            yield "data: [SOURCES][]\n[/SOURCES]\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(error_stream(), media_type="text/event-stream")

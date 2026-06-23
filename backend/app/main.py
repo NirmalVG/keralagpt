@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from app.routers import ingestion, retrieval, chat
+from app.routers import ingestion, retrieval, chat, domains, contribute, feedback, conversations
 
 load_dotenv()
 
@@ -14,15 +14,23 @@ app = FastAPI(
 # CORS — allows your Next.js frontend (localhost:3000) to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "https://*.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ── Core routers ────────────────────────────────────────────────
+app.include_router(chat.router)
 app.include_router(ingestion.router)
 app.include_router(retrieval.router)
-app.include_router(chat.router)
+
+# ── New feature routers ─────────────────────────────────────────
+app.include_router(domains.router)
+app.include_router(contribute.router)
+app.include_router(feedback.router)
+app.include_router(conversations.router)
+
 
 @app.get("/health")
 async def health():

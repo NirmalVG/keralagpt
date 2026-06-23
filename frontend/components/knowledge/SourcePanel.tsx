@@ -12,7 +12,9 @@ const TIER_CONFIG = {
 }
 
 export function SourcePanel() {
-  const { messages } = useChatStore()
+  const { messages, sourcePanelOpen } = useChatStore()
+
+  if (!sourcePanelOpen) return null
 
   // Get sources from the last assistant message
   const lastAssistant = [...messages]

@@ -17,13 +17,21 @@ export function ChatInterface() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  // Find the index of the last assistant message
+  const lastAssistantIdx = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "assistant") return i
+    }
+    return -1
+  })()
+
   return (
     <main
       style={{
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
+        minHeight: 0,
         overflow: "hidden",
       }}
     >
@@ -104,7 +112,9 @@ export function ChatInterface() {
                 letterSpacing: "0.02em",
               }}
             >
-              Session initialized · Ancient Era Context Loaded
+              {activeDomain
+                ? `${activeDomain.label} · Knowledge Session Active`
+                : "Session initialized · All Domains Active"}
             </div>
           </div>
 
@@ -116,8 +126,12 @@ export function ChatInterface() {
               padding: "8px 28px 16px",
             }}
           >
-            {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+            {messages.map((msg, idx) => (
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                isLast={idx === lastAssistantIdx}
+              />
             ))}
             <div ref={bottomRef} />
           </div>
@@ -125,7 +139,9 @@ export function ChatInterface() {
       )}
 
       {/* ── Query Input ───────────────────────────────── */}
-      <QueryInput />
+      <div style={{ flexShrink: 0 }}>
+        <QueryInput />
+      </div>
     </main>
   )
 }

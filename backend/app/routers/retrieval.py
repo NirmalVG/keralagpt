@@ -35,22 +35,32 @@ async def retrieval_stats():
     Shows how many documents and chunks are in the knowledge base,
     broken down by domain. Use to verify ingestion worked.
     """
-    db = get_supabase()
+    try:
+        db = get_supabase()
 
-    docs = db.table("documents").select("domain").execute()
-    chunks = db.table("chunks").select("document_id").execute()
+        docs = db.table("documents").select("domain").execute()
+        chunks = db.table("chunks").select("document_id").execute()
 
-    # Count by domain
-    domain_counts: dict[str, int] = {}
-    for doc in docs.data:
-        d = doc["domain"]
-        domain_counts[d] = domain_counts.get(d, 0) + 1
+        # Count by domain
+        domain_counts: dict[str, int] = {}
+        for doc in docs.data:
+            d = doc["domain"]
+            domain_counts[d] = domain_counts.get(d, 0) + 1
 
-    return {
-        "total_documents": len(docs.data),
-        "total_chunks": len(chunks.data),
-        "documents_by_domain": domain_counts,
-    }
+        return {
+            "total_documents": len(docs.data),
+            "total_chunks": len(chunks.data),
+            "documents_by_domain": domain_counts,
+        }
+    except Exception as e:
+        print(f"[retrieval] Stats failed: {e}")
+        return {
+            "total_documents": 0,
+            "total_chunks": 0,
+            "documents_by_domain": {},
+            "status": "error",
+            "message": str(e),
+        }
 
 @router.get("/rerank-debug")
 async def rerank_debug(
