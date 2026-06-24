@@ -120,14 +120,14 @@ export const useChatStore = create<ChatStore>((set) => ({
           id: `user-${row.created_at}`,
           role: "user",
           content: row.query,
-          timestamp: new Date(row.created_at),
+          createdAt: new Date(row.created_at),
         })
         if (row.response) {
           msgs.push({
             id: `asst-${row.created_at}`,
             role: "assistant",
             content: row.response,
-            timestamp: new Date(row.created_at),
+            createdAt: new Date(row.created_at),
             sources: [],
             isStreaming: false,
           })
