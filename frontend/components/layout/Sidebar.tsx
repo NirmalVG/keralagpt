@@ -5,7 +5,7 @@ import { useChatStore } from "@/lib/store/chatStore"
 import { DOMAINS, type RetrievalStats, type ConversationSummary } from "@/lib/types/chat"
 
 export function Sidebar() {
-  const { activeDomain, setDomain, clearMessages, sidebarOpen } = useChatStore()
+  const { activeDomain, setDomain, clearMessages, sidebarOpen, loadConversation } = useChatStore()
   const [stats, setStats] = useState<RetrievalStats | null>(null)
   const [statsError, setStatsError] = useState<string | null>(null)
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
@@ -262,6 +262,7 @@ export function Sidebar() {
           conversations.slice(0, 8).map((convo) => (
             <button
               key={convo.id}
+              onClick={() => loadConversation(convo.session_id, convo.domain)}
               style={{
                 width: "100%",
                 padding: "8px 16px",

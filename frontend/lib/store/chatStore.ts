@@ -25,6 +25,7 @@ interface ChatStore {
   toggleSourcePanel: () => void
   setSidebarOpen: (v: boolean) => void
   setSourcePanelOpen: (v: boolean) => void
+  loadConversation: (sessionId: string, domain?: string | null) => Promise<void>
 }
 
 function generateSessionId(): string {
@@ -106,4 +107,44 @@ export const useChatStore = create<ChatStore>((set) => ({
   toggleSourcePanel: () => set((s) => ({ sourcePanelOpen: !s.sourcePanelOpen })),
   setSidebarOpen: (v) => set({ sidebarOpen: v }),
   setSourcePanelOpen: (v) => set({ sourcePanelOpen: v }),
+  loadConversation: async (sid, domain) => {
+    try {
+      const res = await fetch(`/api/conversations/${sid}`)
+      if (!res.ok) return
+      const data: Array<{ query: string; response: string; domain?: string; created_at: string }> = await res.json()
+      if (!data.length) return
+
+      const msgs: Message[] = []
+      for (const row of data) {
+        msgs.push({
+          id: `user-${row.created_at}`,
+          role: "user",
+          content: row.query,
+          timestamp: new Date(row.created_at),
+        })
+        if (row.response) {
+          msgs.push({
+            id: `asst-${row.created_at}`,
+            role: "assistant",
+            content: row.response,
+            timestamp: new Date(row.created_at),
+            sources: [],
+            isStreaming: false,
+          })
+        }
+      }
+
+      // Find matching domain
+      const { DOMAINS } = await import("@/lib/types/chat")
+      const matchedDomain = domain ? DOMAINS.find((d) => d.id === domain) ?? null : null
+
+      set({
+        messages: msgs,
+        sessionId: sid,
+        activeDomain: matchedDomain,
+      })
+    } catch (e) {
+      console.error("[chatStore] Failed to load conversation:", e)
+    }
+  },
 }))
