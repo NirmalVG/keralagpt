@@ -138,7 +138,7 @@ export function ChatInterface() {
         </>
       )}
 
-      {/* ── Query Input ───────────────────────────────── */}
+      {/* ── Query Input (pinned to bottom) ─────────────── */}
       <div style={{ flexShrink: 0 }}>
         <QueryInput />
       </div>
