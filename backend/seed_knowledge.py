@@ -6,6 +6,7 @@ Run: python seed_knowledge.py
 import asyncio
 import sys
 import os
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app.services.ingestion.ingestor import ingest_document
@@ -206,9 +207,9 @@ The industry produces approximately 200 films annually. The International Film F
         "author": "KeralaGPT Seed",
         "content": """Kerala, located on the southwestern Malabar Coast of India, is a narrow strip of land between the Western Ghats and the Arabian Sea. The state spans 38,863 sq km with a coastline of 580 km.
 
-Kerala is divided into three geographical regions: the eastern highlands (Western Ghats, rising to 2,695m at Anamudi — the highest peak in South India), the central midlands (undulating hills and valleys), and the western coastal lowlands (including the famous backwaters).
+Kerala is divided into three geographical regions: the eastern highlands (Western Ghats, rising to 2,695m at Anamudi -- the highest peak in South India), the central midlands (undulating hills and valleys), and the western coastal lowlands (including the famous backwaters).
 
-The Backwaters are Kerala's most iconic geographical feature — a network of 1,500 km of interconnected canals, rivers, lakes, and inlets running parallel to the Arabian Sea coast. Major backwater destinations include Alappuzha (Alleppey), Kumarakom, Kollam, and Kochi. Vembanad Lake, at 2,033 sq km, is the largest lake in Kerala and India's longest lake. Houseboats (kettuvallam — traditional rice barges converted for tourism) offer a unique way to explore the backwaters.
+The Backwaters are Kerala's most iconic geographical feature -- a network of 1,500 km of interconnected canals, rivers, lakes, and inlets running parallel to the Arabian Sea coast. Major backwater destinations include Alappuzha (Alleppey), Kumarakom, Kollam, and Kochi. Vembanad Lake, at 2,033 sq km, is the largest lake in Kerala and India's longest lake. Houseboats (kettuvallam -- traditional rice barges converted for tourism) offer a unique way to explore the backwaters.
 
 The Western Ghats, a UNESCO World Heritage Site, are one of the world's eight "hottest hotspots" of biological diversity. Kerala's portion includes Periyar Tiger Reserve, Silent Valley National Park (one of the last remaining tracts of virgin tropical evergreen forest), Eravikulam National Park (home to the endangered Nilgiri Tahr), and Wayanad Wildlife Sanctuary.
 
@@ -242,10 +243,10 @@ async def main():
                 author=doc.get("author"),
             )
             chunks = result.get("chunks_created", "?")
-            print(f"  ✓ [{i}/{len(SEED_DATA)}] {doc['domain']:20s} → {doc['title'][:50]}  ({chunks} chunks)")
+            print(f"  OK [{i}/{len(SEED_DATA)}] {doc['domain']:20s} - {doc['title'][:50]}  ({chunks} chunks)")
             success += 1
         except Exception as e:
-            print(f"  ✗ [{i}/{len(SEED_DATA)}] {doc['domain']:20s} → FAILED: {e}")
+            print(f"  FAIL [{i}/{len(SEED_DATA)}] {doc['domain']:20s} - ERROR: {e}")
             failed += 1
 
     print(f"\n{'=' * 60}")
