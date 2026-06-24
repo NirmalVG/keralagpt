@@ -51,3 +51,11 @@ async def health_db():
         return {"status": "ok", "db": "connected", "documents": len(result.data)}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+    
+@app.get("/health/keepalive")
+async def keepalive():
+    """Pings Supabase to prevent free-tier auto-pause."""
+    from app.services.db.supabase_client import get_supabase
+    db = get_supabase()
+    result = db.table("documents").select("id").limit(1).execute()
+    return {"status": "alive", "documents_checked": len(result.data)}
