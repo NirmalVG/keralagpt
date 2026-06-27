@@ -38,6 +38,7 @@ export function QueryInput() {
 
   return (
     <div
+      className="query-outer"
       style={{
         padding: "16px 24px 20px",
         background: "var(--bg-page)",
@@ -46,6 +47,7 @@ export function QueryInput() {
     >
       {/* ── Input container ─────────────────────────── */}
       <div
+        className="query-box"
         style={{
           maxWidth: 760,
           margin: "0 auto",

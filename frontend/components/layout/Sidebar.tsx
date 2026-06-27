@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react"
 import { useChatStore } from "@/lib/store/chatStore"
 import { DOMAINS, type RetrievalStats, type ConversationSummary } from "@/lib/types/chat"
+import Image from "next/image"
 
 export function Sidebar() {
-  const { activeDomain, setDomain, clearMessages, sidebarOpen, loadConversation } = useChatStore()
+  const { activeDomain, setDomain, clearMessages, sidebarOpen, setSidebarOpen, loadConversation } = useChatStore()
   const [stats, setStats] = useState<RetrievalStats | null>(null)
   const [statsError, setStatsError] = useState<string | null>(null)
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -51,6 +53,24 @@ export function Sidebar() {
     }
   }, [])
 
+  const handleDeleteThread = async (sessionId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDeletingId(sessionId)
+    try {
+      await fetch(`/api/conversations/${sessionId}`, { method: "DELETE" })
+      setConversations((prev) => prev.filter((c) => c.session_id !== sessionId))
+    } catch {
+      // silently fail
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const handleNavClick = () => {
+    // Close sidebar on mobile after navigation
+    if (window.innerWidth <= 1024) setSidebarOpen(false)
+  }
+
   const totalDocs = stats?.total_documents ?? 0
   const totalChunks = stats?.total_chunks ?? 0
   const seededDomains = stats?.documents_by_domain
@@ -63,7 +83,6 @@ export function Sidebar() {
       ? `${totalDocs} docs / ${totalChunks} chunks`
       : "Knowledge base empty"
 
-  // Domain colors for conversation dots
   const domainColors: Record<string, string> = {
     "performing-arts": "#C8952A",
     "literature": "#1A4A7A",
@@ -75,303 +94,347 @@ export function Sidebar() {
     "geography": "#2D8B6B",
   }
 
-  if (!sidebarOpen) return null
-
   return (
-    <aside
-      style={{
-        width: "var(--sidebar-width)",
-        minWidth: "var(--sidebar-width)",
-        backgroundColor: "var(--bg-sidebar)",
-        borderRight: "1px solid var(--border-subtle)",
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        position: "sticky",
-        top: 0,
-        overflowY: "auto",
-      }}
-    >
-      <div style={{ padding: "20px 16px 16px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 8,
-              background: "linear-gradient(135deg, #C8952A, #E8A020)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "var(--shadow-gold)",
-              flexShrink: 0,
-              color: "#FAF7F2",
-              fontFamily: "var(--font-ui)",
-              fontWeight: 700,
-            }}
-          >
-            K
-          </div>
-          <div>
-            <div
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontWeight: 600,
-                fontSize: 13,
-                color: "var(--text-primary)",
-              }}
-            >
-              KeralaGPT
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-ui)",
-                fontWeight: 500,
-                fontSize: 9,
-                color: "var(--text-muted)",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-              }}
-            >
-              Cultural Intelligence
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={clearMessages}
-          style={{
-            width: "100%",
-            height: 40,
-            borderRadius: 8,
-            border: "none",
-            background: "var(--gold-dark)",
-            color: "#FAF7F2",
-            fontFamily: "var(--font-ui)",
-            fontWeight: 500,
-            fontSize: 13,
-            cursor: "pointer",
-            transition: "all 0.15s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.opacity = "0.9"
-            e.currentTarget.style.transform = "translateY(-1px)"
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = "1"
-            e.currentTarget.style.transform = "translateY(0)"
-          }}
-        >
-          + New Insight
-        </button>
-      </div>
-
-      {/* ── Navigation Links ─────────────────────── */}
+    <>
+      {/* ── Backdrop overlay (mobile/tablet) ──── */}
       <div
+        className={`sidebar-backdrop ${sidebarOpen ? "sidebar-backdrop-visible" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      <aside
+        className={`sidebar-mobile ${sidebarOpen ? "sidebar-open" : ""}`}
         style={{
-          padding: "0 16px 12px",
+          width: "var(--sidebar-width)",
+          minWidth: "var(--sidebar-width)",
+          backgroundColor: "var(--bg-sidebar)",
+          borderRight: "1px solid var(--border-subtle)",
           display: "flex",
           flexDirection: "column",
-          gap: 2,
+          height: "100vh",
+          position: "sticky",
+          top: 0,
+          overflowY: "auto",
         }}
       >
-        <NavLink href="/explore" icon="🧭" label="Explore Domains" />
-        <NavLink href="/contribute" icon="📝" label="Contribute Knowledge" />
-      </div>
-
-      <div style={{ padding: "8px 0" }}>
-        <SectionLabel>Active Domains</SectionLabel>
-        {DOMAINS.map((domain) => {
-          const isActive = activeDomain?.id === domain.id
-          return (
-            <button
-              key={domain.id}
-              onClick={() => setDomain(isActive ? null : domain)}
-              style={{
-                width: "100%",
-                padding: "9px 16px",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                border: "none",
-                borderLeft: isActive
-                  ? "3px solid var(--gold-light)"
-                  : "3px solid transparent",
-                background: isActive ? "var(--bg-domain-active)" : "transparent",
-                cursor: "pointer",
-                textAlign: "left",
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "var(--bg-elevated)"
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "transparent"
-                }
-              }}
-            >
-              <span
-                style={{
-                  width: 24,
-                  fontSize: 14,
-                  textAlign: "center",
-                }}
-              >
-                {domain.icon}
-              </span>
-              <span
+        <div style={{ padding: "20px 16px 16px" }}>
+          {/* ── Logo + Brand ────────────── */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <Image
+              src="/images/logo-lotus.svg"
+              alt="KeralaGPT"
+              width={36}
+              height={30}
+              style={{ flexShrink: 0 }}
+              priority
+            />
+            <div>
+              <div
                 style={{
                   fontFamily: "var(--font-ui)",
+                  fontWeight: 600,
                   fontSize: 13,
-                  fontWeight: isActive ? 500 : 400,
-                  color: isActive ? "var(--gold-dark)" : "var(--text-secondary)",
+                  color: "var(--text-primary)",
                 }}
               >
-                {domain.label}
-              </span>
-            </button>
-          )
-        })}
-      </div>
+                KeralaGPT
+              </div>
+              <div
+                style={{
+                  fontFamily: "var(--font-ui)",
+                  fontWeight: 500,
+                  fontSize: 9,
+                  color: "var(--text-muted)",
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Cultural Intelligence
+              </div>
+            </div>
+          </div>
 
-      {/* ── Recent Threads ───────────────────────── */}
-      <div
-        style={{
-          padding: "16px 0 8px",
-          borderTop: "1px solid var(--border-subtle)",
-          marginTop: 8,
-        }}
-      >
-        <SectionLabel>Recent Threads</SectionLabel>
-        {conversations.length === 0 ? (
-          <div
+          <button
+            onClick={() => { clearMessages(); handleNavClick() }}
             style={{
-              padding: "8px 16px",
+              width: "100%",
+              height: 40,
+              borderRadius: 8,
+              border: "none",
+              background: "var(--gold-dark)",
+              color: "#FAF7F2",
               fontFamily: "var(--font-ui)",
-              fontSize: 11,
-              color: "var(--text-muted)",
-              fontStyle: "italic",
+              fontWeight: 500,
+              fontSize: 13,
+              cursor: "pointer",
+              transition: "all 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.opacity = "0.9"
+              e.currentTarget.style.transform = "translateY(-1px)"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.opacity = "1"
+              e.currentTarget.style.transform = "translateY(0)"
             }}
           >
-            No conversations yet
-          </div>
-        ) : (
-          conversations.slice(0, 8).map((convo) => (
-            <button
-              key={convo.id}
-              onClick={() => loadConversation(convo.session_id, convo.domain)}
-              style={{
-                width: "100%",
-                padding: "8px 16px",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                textAlign: "left",
-                transition: "all 0.15s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--bg-elevated)"
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent"
-              }}
-            >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: domainColors[convo.domain ?? ""] ?? "var(--gold-light)",
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: "var(--font-ui)",
-                  fontSize: 12,
-                  color: "var(--text-secondary)",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {convo.query.length > 35
-                  ? convo.query.slice(0, 35) + "..."
-                  : convo.query}
-              </span>
-            </button>
-          ))
-        )}
-      </div>
+            + New Insight
+          </button>
+        </div>
 
-      <div style={{ flex: 1 }} />
-
-      {/* ── Knowledge Base Stats ──────────────── */}
-      <div style={{ padding: "12px 16px" }}>
+        {/* ── Navigation Links ─────────────────────── */}
         <div
           style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border-subtle)",
-            borderRadius: 8,
-            padding: "12px 14px",
-            boxShadow: "var(--shadow-xs)",
+            padding: "0 16px 12px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
           }}
         >
+          <NavLink href="/explore" icon="🧭" label="Explore Domains" onClick={handleNavClick} />
+          <NavLink href="/contribute" icon="📝" label="Contribute Knowledge" onClick={handleNavClick} />
+        </div>
+
+        <div style={{ padding: "8px 0" }}>
+          <SectionLabel>Active Domains</SectionLabel>
+          {DOMAINS.map((domain) => {
+            const isActive = activeDomain?.id === domain.id
+            return (
+              <button
+                key={domain.id}
+                onClick={() => { setDomain(isActive ? null : domain); handleNavClick() }}
+                style={{
+                  width: "100%",
+                  padding: "9px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  border: "none",
+                  borderLeft: isActive
+                    ? "3px solid var(--gold-light)"
+                    : "3px solid transparent",
+                  background: isActive ? "var(--bg-domain-active)" : "transparent",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.15s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = "var(--bg-elevated)"
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = "transparent"
+                  }
+                }}
+              >
+                <span
+                  style={{
+                    width: 24,
+                    fontSize: 14,
+                    textAlign: "center",
+                  }}
+                >
+                  {domain.icon}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-ui)",
+                    fontSize: 13,
+                    fontWeight: isActive ? 500 : 400,
+                    color: isActive ? "var(--gold-dark)" : "var(--text-secondary)",
+                  }}
+                >
+                  {domain.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* ── Recent Threads ───────────────────────── */}
+        <div
+          style={{
+            padding: "16px 0 8px",
+            borderTop: "1px solid var(--border-subtle)",
+            marginTop: 8,
+          }}
+        >
+          <SectionLabel>Recent Threads</SectionLabel>
+          {conversations.length === 0 ? (
+            <div
+              style={{
+                padding: "8px 16px",
+                fontFamily: "var(--font-ui)",
+                fontSize: 11,
+                color: "var(--text-muted)",
+                fontStyle: "italic",
+              }}
+            >
+              No conversations yet
+            </div>
+          ) : (
+            conversations.slice(0, 8).map((convo) => (
+              <div
+                key={convo.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  position: "relative",
+                }}
+              >
+                <button
+                  onClick={() => { loadConversation(convo.session_id, convo.domain); handleNavClick() }}
+                  style={{
+                    flex: 1,
+                    padding: "8px 36px 8px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "all 0.15s ease",
+                    minWidth: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "var(--bg-elevated)"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent"
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: "50%",
+                      background: domainColors[convo.domain ?? ""] ?? "var(--gold-light)",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: "var(--font-ui)",
+                      fontSize: 12,
+                      color: "var(--text-secondary)",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {convo.query.length > 35
+                      ? convo.query.slice(0, 35) + "..."
+                      : convo.query}
+                  </span>
+                </button>
+
+                {/* Delete button */}
+                <button
+                  onClick={(e) => handleDeleteThread(convo.session_id, e)}
+                  disabled={deletingId === convo.session_id}
+                  title="Delete thread"
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    width: 22,
+                    height: 22,
+                    borderRadius: 4,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 12,
+                    color: "var(--text-muted)",
+                    opacity: 0.4,
+                    transition: "all 0.15s ease",
+                    flexShrink: 0,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = "1"
+                    e.currentTarget.style.color = "var(--crimson)"
+                    e.currentTarget.style.background = "rgba(139, 32, 16, 0.08)"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = "0.4"
+                    e.currentTarget.style.color = "var(--text-muted)"
+                    e.currentTarget.style.background = "transparent"
+                  }}
+                >
+                  {deletingId === convo.session_id ? "·" : "×"}
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        {/* ── Knowledge Base Stats ──────────────── */}
+        <div style={{ padding: "12px 16px" }}>
           <div
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              marginBottom: 8,
-              fontFamily: "var(--font-ui)",
-              fontSize: 11,
-              fontWeight: 500,
-              color: "var(--text-secondary)",
-            }}
-          >
-            <span>KB</span> Knowledge Base Stats
-          </div>
-          <div
-            style={{
-              height: 4,
-              borderRadius: 100,
-              background: "var(--border-subtle)",
-              marginBottom: 6,
+              background: "var(--bg-card)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: 8,
+              padding: "12px 14px",
+              boxShadow: "var(--shadow-xs)",
             }}
           >
             <div
               style={{
-                width: `${coverage}%`,
-                height: "100%",
-                borderRadius: 100,
-                background:
-                  "linear-gradient(90deg, var(--gold-light), var(--gold-mid))",
-                transition: "width 0.6s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginBottom: 8,
+                fontFamily: "var(--font-ui)",
+                fontSize: 11,
+                fontWeight: 500,
+                color: "var(--text-secondary)",
               }}
-            />
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 8,
-              fontFamily: "var(--font-ui)",
-              fontSize: 10,
-              color: "var(--text-muted)",
-            }}
-          >
-            <span>{statsLabel}</span>
-            <span>{coverage}% Coverage</span>
+            >
+              <span>KB</span> Knowledge Base Stats
+            </div>
+            <div
+              style={{
+                height: 4,
+                borderRadius: 100,
+                background: "var(--border-subtle)",
+                marginBottom: 6,
+              }}
+            >
+              <div
+                style={{
+                  width: `${coverage}%`,
+                  height: "100%",
+                  borderRadius: 100,
+                  background:
+                    "linear-gradient(90deg, var(--gold-light), var(--gold-mid))",
+                  transition: "width 0.6s ease",
+                }}
+              />
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 8,
+                fontFamily: "var(--font-ui)",
+                fontSize: 10,
+                color: "var(--text-muted)",
+              }}
+            >
+              <span>{statsLabel}</span>
+              <span>{coverage}% Coverage</span>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   )
 }
 
@@ -393,10 +456,11 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function NavLink({ href, icon, label }: { href: string; icon: string; label: string }) {
+function NavLink({ href, icon, label, onClick }: { href: string; icon: string; label: string; onClick?: () => void }) {
   return (
     <a
       href={href}
+      onClick={onClick}
       style={{
         display: "flex",
         alignItems: "center",

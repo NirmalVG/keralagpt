@@ -14,7 +14,7 @@ const TIER_CONFIG = {
 export function SourcePanel() {
   const { messages, sourcePanelOpen } = useChatStore()
 
-  if (!sourcePanelOpen) return null
+  if (!sourcePanelOpen && typeof window !== 'undefined' && window.innerWidth > 1024) return null
 
   // Get sources from the last assistant message
   const lastAssistant = [...messages]
@@ -25,6 +25,7 @@ export function SourcePanel() {
 
   return (
     <aside
+      className={`source-panel-mobile ${sourcePanelOpen ? "source-panel-open" : ""}`}
       style={{
         width: "var(--source-width)",
         minWidth: "var(--source-width)",

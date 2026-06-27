@@ -51,8 +51,10 @@ export default function ExplorePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "16px 40px",
+          padding: "16px clamp(16px, 4vw, 40px)",
           borderBottom: "1px solid var(--border-subtle)",
+          gap: 8,
+          flexWrap: "wrap",
         }}
       >
         <a
@@ -101,7 +103,7 @@ export default function ExplorePage() {
       <div
         style={{
           textAlign: "center",
-          padding: "64px 32px 48px",
+          padding: "clamp(32px, 6vw, 64px) clamp(16px, 4vw, 32px) clamp(24px, 4vw, 48px)",
           maxWidth: 700,
           margin: "0 auto",
         }}
@@ -109,7 +111,7 @@ export default function ExplorePage() {
         <h1
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: 48,
+            fontSize: "clamp(28px, 5vw, 48px)",
             fontWeight: 400,
             color: "var(--crimson)",
             letterSpacing: "-0.02em",
@@ -138,9 +140,9 @@ export default function ExplorePage() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(min(280px, 100%), 1fr))",
           gap: 20,
-          padding: "0 40px 80px",
+          padding: "0 clamp(16px, 4vw, 40px) 80px",
           maxWidth: 1400,
           margin: "0 auto",
         }}

@@ -61,3 +61,14 @@ async def get_conversation(session_id: str):
     except Exception as e:
         print(f"[conversations] Get session failed: {e}")
         return []
+
+
+@router.delete("/{session_id}")
+async def delete_conversation(session_id: str):
+    try:
+        db = get_supabase()
+        db.table("conversations").delete().eq("session_id", session_id).execute()
+        return {"status": "ok"}
+    except Exception as e:
+        print(f"[conversations] Delete failed: {e}")
+        return {"status": "ok"}

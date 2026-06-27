@@ -2,6 +2,7 @@
 // components/layout/Header.tsx
 import { useEffect, useState } from "react"
 import { useChatStore } from "@/lib/store/chatStore"
+import Image from "next/image"
 
 export function Header() {
   const { isDark, toggleTheme, toggleSidebar, toggleSourcePanel } = useChatStore()
@@ -39,7 +40,7 @@ export function Header() {
     apiStatus === "ok"
       ? "Backend online"
       : apiStatus === "checking"
-        ? "Checking backend"
+        ? "Checking..."
         : "Backend offline"
 
   return (
@@ -55,16 +56,16 @@ export function Header() {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 28px",
+        padding: "0 16px",
         position: "sticky",
         top: 0,
         zIndex: 50,
         transition: "background 0.6s ease",
+        gap: 8,
       }}
     >
       {/* ── Left: Hamburger + Logo ──────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {/* Sidebar toggle (hamburger) */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         <button
           onClick={toggleSidebar}
           aria-label="Toggle sidebar"
@@ -81,6 +82,7 @@ export function Header() {
             fontSize: 16,
             color: "var(--text-secondary)",
             transition: "all 0.15s ease",
+            flexShrink: 0,
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "var(--bg-card)"
@@ -97,15 +99,31 @@ export function Header() {
         <a
           href="/"
           style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 22,
-            color: "var(--gold-dark)",
-            letterSpacing: "-0.02em",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
             textDecoration: "none",
             flexShrink: 0,
           }}
         >
-          KeralaGPT
+          <Image
+            src="/images/logo-lotus.svg"
+            alt="KeralaGPT"
+            width={28}
+            height={24}
+            priority
+          />
+          <span
+            className="header-logo"
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: 20,
+              color: "var(--gold-dark)",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            KeralaGPT
+          </span>
         </a>
       </div>
 
@@ -119,6 +137,7 @@ export function Header() {
           <a
             key={item.label}
             href={item.href}
+            className="header-nav-label"
             style={{
               padding: "6px 14px",
               border: "none",
@@ -131,6 +150,7 @@ export function Header() {
               textDecoration: "none",
               borderRadius: 6,
               transition: "all 0.15s ease",
+              whiteSpace: "nowrap",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = "var(--gold-dark)"
@@ -147,19 +167,21 @@ export function Header() {
       </nav>
 
       {/* ── Right Controls ────────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+        {/* Status pill */}
         <div
           title={statusLabel}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 6,
-            padding: "5px 9px",
+            gap: 5,
+            padding: "4px 8px",
             borderRadius: 100,
             border: "1px solid var(--border-subtle)",
             fontFamily: "var(--font-ui)",
             fontSize: 11,
             color: "var(--text-secondary)",
+            whiteSpace: "nowrap",
           }}
         >
           <span
@@ -169,9 +191,10 @@ export function Header() {
               borderRadius: "50%",
               background: statusColor,
               display: "inline-block",
+              flexShrink: 0,
             }}
           />
-          {statusLabel}
+          <span className="header-status-label">{statusLabel}</span>
         </div>
 
         {/* Source panel toggle */}
@@ -192,6 +215,7 @@ export function Header() {
             fontSize: 14,
             color: "var(--text-secondary)",
             transition: "all 0.15s ease",
+            flexShrink: 0,
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "var(--bg-card)"
@@ -210,8 +234,8 @@ export function Header() {
           onClick={toggleTheme}
           aria-label="Toggle dark mode"
           style={{
-            width: 56,
-            height: 28,
+            width: 52,
+            height: 26,
             borderRadius: 100,
             border: `1.5px solid ${isDark ? "rgba(139,92,246,0.35)" : "rgba(200,149,42,0.35)"}`,
             background: isDark ? "#1C1820" : "#F5F0E8",
@@ -221,12 +245,11 @@ export function Header() {
             flexShrink: 0,
           }}
         >
-          {/* Thumb */}
           <span
             style={{
               position: "absolute",
-              top: 3,
-              left: isDark ? 29 : 3,
+              top: 2,
+              left: isDark ? 27 : 2,
               width: 20,
               height: 20,
               borderRadius: "50%",

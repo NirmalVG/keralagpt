@@ -80,8 +80,10 @@ export default function ContributePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "16px 40px",
+          padding: "16px clamp(16px, 4vw, 40px)",
           borderBottom: "1px solid var(--border-subtle)",
+          gap: 8,
+          flexWrap: "wrap",
         }}
       >
         <a
@@ -131,10 +133,10 @@ export default function ContributePage() {
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "48px 40px 80px",
+          padding: "clamp(24px, 4vw, 48px) clamp(16px, 4vw, 40px) 80px",
           display: "grid",
-          gridTemplateColumns: "1fr 380px",
-          gap: 48,
+          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 380px)",
+          gap: "clamp(24px, 4vw, 48px)",
           alignItems: "start",
         }}
       >
@@ -143,7 +145,7 @@ export default function ContributePage() {
           <h1
             style={{
               fontFamily: "var(--font-display)",
-              fontSize: 40,
+              fontSize: "clamp(28px, 5vw, 40px)",
               fontWeight: 400,
               color: "var(--crimson)",
               marginBottom: 8,

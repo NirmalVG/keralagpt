@@ -42,6 +42,7 @@ export function HeroGreeting() {
 
   return (
     <div
+      className="hero-section"
       style={{
         flex: 1,
         display: "flex",
@@ -56,6 +57,7 @@ export function HeroGreeting() {
     >
       {/* Brand name */}
       <h1
+        className="hero-title"
         style={{
           fontFamily: "var(--font-display)",
           fontSize: 52,
@@ -71,6 +73,7 @@ export function HeroGreeting() {
 
       {/* Headline */}
       <h2
+        className="hero-subtitle"
         style={{
           fontFamily: "var(--font-display)",
           fontSize: 26,
@@ -87,6 +90,7 @@ export function HeroGreeting() {
 
       {/* Subtitle */}
       <p
+        className="hero-desc"
         style={{
           fontFamily: "var(--font-body)",
           fontSize: 15,
@@ -101,6 +105,7 @@ export function HeroGreeting() {
 
       {/* ── Suggestion Cards ────────────────────────── */}
       <div
+        className="suggestion-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(2, 1fr)",

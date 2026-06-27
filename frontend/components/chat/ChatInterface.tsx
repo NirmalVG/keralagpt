@@ -37,6 +37,7 @@ export function ChatInterface() {
     >
       {/* ── Domain Pills ──────────────────────────────── */}
       <div
+        className="domain-pills"
         style={{
           padding: "14px 28px 12px",
           display: "flex",
@@ -120,6 +121,7 @@ export function ChatInterface() {
 
           {/* Message thread */}
           <div
+            className="message-area"
             style={{
               flex: 1,
               overflowY: "auto",
