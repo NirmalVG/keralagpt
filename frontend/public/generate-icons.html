@@ -1,47 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head><title>Icon Generator</title></head>
-<body>
-<canvas id="c"></canvas>
-<script>
-// This generates PWA icon PNGs from the lotus SVG
-// Run this in a browser, then right-click save each canvas
+  <head>
+    <title>Icon Generator</title>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <script>
+      // This generates PWA icon PNGs from the lotus SVG
+      // Run this in a browser, then right-click save each canvas
 
-const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
-const svgUrl = '/images/logo-lotus.svg';
+      const sizes = [72, 96, 128, 144, 152, 192, 384, 512]
+      const svgUrl = "/images/keralagpt-logo.png"
 
-async function generateIcons() {
-  const img = new Image();
-  img.src = svgUrl;
-  await new Promise(r => img.onload = r);
-  
-  for (const size of sizes) {
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    
-    // Background: warm parchment
-    ctx.fillStyle = '#f7f2ea';
-    ctx.beginPath();
-    ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Draw lotus centered with padding
-    const padding = size * 0.18;
-    const drawSize = size - padding * 2;
-    const offsetY = size * 0.05; // slight downward shift since lotus is top-heavy
-    ctx.drawImage(img, padding, padding + offsetY, drawSize, drawSize * (100/120));
-    
-    // Download
-    const link = document.createElement('a');
-    link.download = `icon-${size}x${size}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  }
-}
+      async function generateIcons() {
+        const img = new Image()
+        img.src = svgUrl
+        await new Promise((r) => (img.onload = r))
 
-generateIcons();
-</script>
-</body>
+        for (const size of sizes) {
+          const canvas = document.createElement("canvas")
+          canvas.width = size
+          canvas.height = size
+          const ctx = canvas.getContext("2d")
+
+          // Background: warm parchment
+          ctx.fillStyle = "#f7f2ea"
+          ctx.beginPath()
+          ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2)
+          ctx.fill()
+
+          // Draw lotus centered with padding
+          const padding = size * 0.18
+          const drawSize = size - padding * 2
+          const offsetY = size * 0.05 // slight downward shift since lotus is top-heavy
+          ctx.drawImage(
+            img,
+            padding,
+            padding + offsetY,
+            drawSize,
+            drawSize * (100 / 120),
+          )
+
+          // Download
+          const link = document.createElement("a")
+          link.download = `icon-${size}x${size}.png`
+          link.href = canvas.toDataURL("image/png")
+          link.click()
+        }
+      }
+
+      generateIcons()
+    </script>
+  </body>
 </html>

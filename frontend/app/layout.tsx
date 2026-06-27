@@ -54,7 +54,7 @@ export const metadata: Metadata = {
       "AI-powered exploration of Kerala's 3,000 years of culture, arts, history, cuisine, and wisdom. Curated knowledge across 8 cultural domains.",
     images: [
       {
-        url: "/images/logo-lotus.svg",
+        url: "/images/keralagpt-logo.png",
         width: 120,
         height: 100,
         alt: "KeralaGPT Lotus Logo",
@@ -66,11 +66,11 @@ export const metadata: Metadata = {
     title: "KeralaGPT — Kerala Cultural Intelligence Platform",
     description:
       "AI-powered exploration of Kerala's 3,000 years of culture, arts, history, and wisdom.",
-    images: ["/images/logo-lotus.svg"],
+    images: ["/images/keralagpt-logo.png"],
   },
   icons: {
     icon: "/favicon.ico",
-    apple: "/images/logo-lotus.svg",
+    apple: "/images/keralagpt-logo.png",
   },
   manifest: undefined,
 }

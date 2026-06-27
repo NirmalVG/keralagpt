@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from "react"
 import { useChatStore } from "@/lib/store/chatStore"
-import { DOMAINS, type RetrievalStats, type ConversationSummary } from "@/lib/types/chat"
+import {
+  DOMAINS,
+  type RetrievalStats,
+  type ConversationSummary,
+} from "@/lib/types/chat"
 import Image from "next/image"
 
 export function Sidebar() {
-  const { activeDomain, setDomain, clearMessages, sidebarOpen, setSidebarOpen, loadConversation } = useChatStore()
+  const {
+    activeDomain,
+    setDomain,
+    clearMessages,
+    sidebarOpen,
+    setSidebarOpen,
+    loadConversation,
+  } = useChatStore()
   const [stats, setStats] = useState<RetrievalStats | null>(null)
   const [statsError, setStatsError] = useState<string | null>(null)
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
@@ -21,10 +32,12 @@ export function Sidebar() {
         const data: RetrievalStats = await res.json()
         if (cancelled) return
         setStats(data)
-        setStatsError(res.ok ? null : data.message ?? "Backend unavailable")
+        setStatsError(res.ok ? null : (data.message ?? "Backend unavailable"))
       } catch (error) {
         if (cancelled) return
-        setStatsError(error instanceof Error ? error.message : "Backend unavailable")
+        setStatsError(
+          error instanceof Error ? error.message : "Backend unavailable",
+        )
       }
     }
 
@@ -85,13 +98,13 @@ export function Sidebar() {
 
   const domainColors: Record<string, string> = {
     "performing-arts": "#C8952A",
-    "literature": "#1A4A7A",
-    "history": "#8B2010",
+    literature: "#1A4A7A",
+    history: "#8B2010",
     "temple-arch": "#6B2D8B",
-    "festivals": "#1A6B3C",
-    "cuisine": "#B87333",
-    "cinema": "#7C3AED",
-    "geography": "#2D8B6B",
+    festivals: "#1A6B3C",
+    cuisine: "#B87333",
+    cinema: "#7C3AED",
+    geography: "#2D8B6B",
   }
 
   return (
@@ -119,9 +132,16 @@ export function Sidebar() {
       >
         <div style={{ padding: "20px 16px 16px" }}>
           {/* ── Logo + Brand ────────────── */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              marginBottom: 16,
+            }}
+          >
             <Image
-              src="/images/logo-lotus.svg"
+              src="/images/keralagpt-logo.png"
               alt="KeralaGPT"
               width={36}
               height={30}
@@ -155,7 +175,10 @@ export function Sidebar() {
           </div>
 
           <button
-            onClick={() => { clearMessages(); handleNavClick() }}
+            onClick={() => {
+              clearMessages()
+              handleNavClick()
+            }}
             style={{
               width: "100%",
               height: 40,
@@ -191,8 +214,18 @@ export function Sidebar() {
             gap: 2,
           }}
         >
-          <NavLink href="/explore" icon="🧭" label="Explore Domains" onClick={handleNavClick} />
-          <NavLink href="/contribute" icon="📝" label="Contribute Knowledge" onClick={handleNavClick} />
+          <NavLink
+            href="/explore"
+            icon="🧭"
+            label="Explore Domains"
+            onClick={handleNavClick}
+          />
+          <NavLink
+            href="/contribute"
+            icon="📝"
+            label="Contribute Knowledge"
+            onClick={handleNavClick}
+          />
         </div>
 
         <div style={{ padding: "8px 0" }}>
@@ -202,7 +235,10 @@ export function Sidebar() {
             return (
               <button
                 key={domain.id}
-                onClick={() => { setDomain(isActive ? null : domain); handleNavClick() }}
+                onClick={() => {
+                  setDomain(isActive ? null : domain)
+                  handleNavClick()
+                }}
                 style={{
                   width: "100%",
                   padding: "9px 16px",
@@ -213,7 +249,9 @@ export function Sidebar() {
                   borderLeft: isActive
                     ? "3px solid var(--gold-light)"
                     : "3px solid transparent",
-                  background: isActive ? "var(--bg-domain-active)" : "transparent",
+                  background: isActive
+                    ? "var(--bg-domain-active)"
+                    : "transparent",
                   cursor: "pointer",
                   textAlign: "left",
                   transition: "all 0.15s ease",
@@ -243,7 +281,9 @@ export function Sidebar() {
                     fontFamily: "var(--font-ui)",
                     fontSize: 13,
                     fontWeight: isActive ? 500 : 400,
-                    color: isActive ? "var(--gold-dark)" : "var(--text-secondary)",
+                    color: isActive
+                      ? "var(--gold-dark)"
+                      : "var(--text-secondary)",
                   }}
                 >
                   {domain.label}
@@ -285,7 +325,10 @@ export function Sidebar() {
                 }}
               >
                 <button
-                  onClick={() => { loadConversation(convo.session_id, convo.domain); handleNavClick() }}
+                  onClick={() => {
+                    loadConversation(convo.session_id, convo.domain)
+                    handleNavClick()
+                  }}
                   style={{
                     flex: 1,
                     padding: "8px 36px 8px 16px",
@@ -311,7 +354,8 @@ export function Sidebar() {
                       width: 6,
                       height: 6,
                       borderRadius: "50%",
-                      background: domainColors[convo.domain ?? ""] ?? "var(--gold-light)",
+                      background:
+                        domainColors[convo.domain ?? ""] ?? "var(--gold-light)",
                       flexShrink: 0,
                     }}
                   />
@@ -456,7 +500,17 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function NavLink({ href, icon, label, onClick }: { href: string; icon: string; label: string; onClick?: () => void }) {
+function NavLink({
+  href,
+  icon,
+  label,
+  onClick,
+}: {
+  href: string
+  icon: string
+  label: string
+  onClick?: () => void
+}) {
   return (
     <a
       href={href}

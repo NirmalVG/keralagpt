@@ -5,8 +5,11 @@ import { useChatStore } from "@/lib/store/chatStore"
 import Image from "next/image"
 
 export function Header() {
-  const { isDark, toggleTheme, toggleSidebar, toggleSourcePanel } = useChatStore()
-  const [apiStatus, setApiStatus] = useState<"checking" | "ok" | "error">("checking")
+  const { isDark, toggleTheme, toggleSidebar, toggleSourcePanel } =
+    useChatStore()
+  const [apiStatus, setApiStatus] = useState<"checking" | "ok" | "error">(
+    "checking",
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -15,7 +18,8 @@ export function Header() {
       try {
         const res = await fetch("/api/health")
         const data = await res.json()
-        if (!cancelled) setApiStatus(res.ok && data.status === "ok" ? "ok" : "error")
+        if (!cancelled)
+          setApiStatus(res.ok && data.status === "ok" ? "ok" : "error")
       } catch {
         if (!cancelled) setApiStatus("error")
       }
@@ -65,7 +69,14 @@ export function Header() {
       }}
     >
       {/* ── Left: Hamburger + Logo ──────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          flexShrink: 0,
+        }}
+      >
         <button
           onClick={toggleSidebar}
           aria-label="Toggle sidebar"
@@ -107,7 +118,7 @@ export function Header() {
           }}
         >
           <Image
-            src="/images/logo-lotus.svg"
+            src="/images/keralagpt-logo.png"
             alt="KeralaGPT"
             width={28}
             height={24}
@@ -167,7 +178,9 @@ export function Header() {
       </nav>
 
       {/* ── Right Controls ────────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
+      >
         {/* Status pill */}
         <div
           title={statusLabel}

@@ -7,7 +7,7 @@ const STATIC_ASSETS = [
   "/explore",
   "/contribute",
   "/manifest.json",
-  "/images/logo-lotus.svg",
+  "/images/keralagpt-logo.png",
 ]
 
 // Install — pre-cache critical assets
@@ -15,7 +15,7 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(STATIC_ASSETS)
-    })
+    }),
   )
   self.skipWaiting()
 })
@@ -27,9 +27,9 @@ self.addEventListener("activate", (event) => {
       return Promise.all(
         keys
           .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
+          .map((key) => caches.delete(key)),
       )
-    })
+    }),
   )
   self.clients.claim()
 })
@@ -63,7 +63,7 @@ self.addEventListener("fetch", (event) => {
           return caches.match(request).then((cached) => {
             return cached || caches.match("/")
           })
-        })
+        }),
     )
     return
   }
@@ -90,7 +90,7 @@ self.addEventListener("fetch", (event) => {
           .catch(() => cached)
 
         return cached || fetchPromise
-      })
+      }),
     )
     return
   }
@@ -108,7 +108,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
           return response
         })
-      })
+      }),
     )
     return
   }
