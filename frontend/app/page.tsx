@@ -15,11 +15,23 @@ import { useChat } from "@/lib/hooks/useChat"
 import { DOMAINS } from "@/lib/types/chat"
 
 function HomePageInner() {
-  const { setDomain } = useChatStore()
+  const {
+    setDomain,
+    sidebarOpen,
+    setSidebarOpen,
+    sourcePanelOpen,
+    setSourcePanelOpen,
+  } = useChatStore()
   const { sendMessage } = useChat()
   const searchParams = useSearchParams()
 
+  // On mount: close sidebar on mobile/tablet, handle URL params
   useEffect(() => {
+    if (window.innerWidth <= 1024) {
+      setSidebarOpen(false)
+      setSourcePanelOpen(false)
+    }
+
     const domainParam = searchParams.get("domain")
     const queryParam = searchParams.get("q")
 
@@ -47,12 +59,22 @@ function HomePageInner() {
 
       The header sits above the main + source panel columns.
       Sidebar has its own sticky positioning.
+      Desktop: wrapper div animates width for collapse/expand.
+      Mobile:  sidebar is fixed-positioned drawer; wrapper is 0px.
     */
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      {/* Left sidebar — sticky, full height */}
-      <Sidebar />
+    <div style={{ display: "flex", height: "100dvh", overflow: "hidden" }}>
+      {/* ── Left sidebar — desktop wrapper handles collapse ──── */}
+      <div
+        className="sidebar-desktop-wrapper"
+        style={{
+          width: sidebarOpen ? "var(--sidebar-width)" : "0px",
+          minWidth: sidebarOpen ? "var(--sidebar-width)" : "0px",
+        }}
+      >
+        <Sidebar />
+      </div>
 
-      {/* Right side — header + chat + source panel */}
+      {/* ── Right side — header + chat + source panel ─────── */}
       <div
         style={{
           flex: 1,
@@ -68,7 +90,17 @@ function HomePageInner() {
         {/* Content row */}
         <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
           <ChatInterface />
-          <SourcePanel />
+
+          {/* ── Right source panel — desktop wrapper ────── */}
+          <div
+            className="source-desktop-wrapper"
+            style={{
+              width: sourcePanelOpen ? "var(--source-width)" : "0px",
+              minWidth: sourcePanelOpen ? "var(--source-width)" : "0px",
+            }}
+          >
+            <SourcePanel />
+          </div>
         </div>
       </div>
     </div>
@@ -88,7 +120,7 @@ function PageSkeleton() {
     <div
       style={{
         display: "flex",
-        height: "100vh",
+        height: "100dvh",
         background: "var(--bg-page)",
         alignItems: "center",
         justifyContent: "center",

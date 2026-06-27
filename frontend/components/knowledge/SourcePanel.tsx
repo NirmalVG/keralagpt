@@ -12,9 +12,7 @@ const TIER_CONFIG = {
 }
 
 export function SourcePanel() {
-  const { messages, sourcePanelOpen } = useChatStore()
-
-  if (!sourcePanelOpen && typeof window !== 'undefined' && window.innerWidth > 1024) return null
+  const { messages, sourcePanelOpen, setSourcePanelOpen } = useChatStore()
 
   // Get sources from the last assistant message
   const lastAssistant = [...messages]
@@ -24,105 +22,111 @@ export function SourcePanel() {
   const hasSources = sources.length > 0
 
   return (
-    <aside
-      className={`source-panel-mobile ${sourcePanelOpen ? "source-panel-open" : ""}`}
-      style={{
-        width: "var(--source-width)",
-        minWidth: "var(--source-width)",
-        borderLeft: "1px solid var(--border-subtle)",
-        background: "var(--bg-card)",
-        display: "flex",
-        flexDirection: "column",
-        height: "100vh",
-        position: "sticky",
-        top: 0,
-        overflowY: "auto",
-        animation: hasSources ? "slide-right 0.3s ease-out" : "none",
-      }}
-    >
-      {/* ── Header ──────────────────────────────────── */}
+    <>
+      {/* ── Backdrop overlay (mobile/tablet) ──── */}
       <div
+        className={`source-backdrop ${sourcePanelOpen ? "source-backdrop-visible" : ""}`}
+        onClick={() => setSourcePanelOpen(false)}
+      />
+
+      <aside
+        className={`source-panel-mobile ${sourcePanelOpen ? "source-panel-open" : ""}`}
         style={{
-          padding: "20px 18px 14px",
-          borderBottom: "1px solid var(--border-subtle)",
+          width: "var(--source-width)",
+          minWidth: "var(--source-width)",
+          borderLeft: "1px solid var(--border-subtle)",
+          background: "var(--bg-card)",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          flexDirection: "column",
+          height: "100%",
+          overflowY: "auto",
+          animation: hasSources ? "slide-right 0.3s ease-out" : "none",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Green pulse dot */}
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: "#1A6B3C",
-              display: "inline-block",
-              animation: hasSources ? "pulse-dot 2s ease infinite" : "none",
-            }}
-          />
-          <span
-            style={{
-              fontFamily: "var(--font-ui)",
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "var(--text-secondary)",
-            }}
-          >
-            Active Sources
-          </span>
+        {/* ── Header ──────────────────────────────────── */}
+        <div
+          style={{
+            padding: "20px 18px 14px",
+            borderBottom: "1px solid var(--border-subtle)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* Green pulse dot */}
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: "50%",
+                background: "#1A6B3C",
+                display: "inline-block",
+                animation: hasSources ? "pulse-dot 2s ease infinite" : "none",
+              }}
+            />
+            <span
+              style={{
+                fontFamily: "var(--font-ui)",
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                textTransform: "uppercase",
+                color: "var(--text-secondary)",
+              }}
+            >
+              Active Sources
+            </span>
+          </div>
+
+          {/* Source count badge */}
+          {hasSources && (
+            <span
+              style={{
+                padding: "2px 8px",
+                borderRadius: 100,
+                background: "var(--gold-subtle)",
+                border: "1px solid var(--border-gold)",
+                fontFamily: "var(--font-ui)",
+                fontSize: 10,
+                fontWeight: 600,
+                color: "var(--gold-dark)",
+              }}
+            >
+              {sources.length} source{sources.length !== 1 ? "s" : ""}
+            </span>
+          )}
         </div>
 
-        {/* Source count badge */}
-        {hasSources && (
-          <span
-            style={{
-              padding: "2px 8px",
-              borderRadius: 100,
-              background: "var(--gold-subtle)",
-              border: "1px solid var(--border-gold)",
-              fontFamily: "var(--font-ui)",
-              fontSize: 10,
-              fontWeight: 600,
-              color: "var(--gold-dark)",
-            }}
-          >
-            {sources.length} source{sources.length !== 1 ? "s" : ""}
-          </span>
-        )}
-      </div>
+        {/* ── Source Cards ────────────────────────────── */}
+        <div style={{ padding: "12px 14px", flex: 1 }}>
+          {!hasSources ? (
+            <EmptySourceState />
+          ) : (
+            sources.map((source, i) => (
+              <SourceCard key={i} source={source} index={i + 1} />
+            ))
+          )}
+        </div>
 
-      {/* ── Source Cards ────────────────────────────── */}
-      <div style={{ padding: "12px 14px", flex: 1 }}>
-        {!hasSources ? (
-          <EmptySourceState />
-        ) : (
-          sources.map((source, i) => (
-            <SourceCard key={i} source={source} index={i + 1} />
-          ))
-        )}
-      </div>
-
-      {/* ── Footer ──────────────────────────────────── */}
-      <div
-        style={{
-          padding: "12px 18px",
-          borderTop: "1px solid var(--border-subtle)",
-          fontFamily: "var(--font-ui)",
-          fontSize: 10,
-          color: "var(--text-muted)",
-          lineHeight: 1.5,
-          textAlign: "center",
-        }}
-      >
-        Citations auto-generated via
-        <br />
-        Semantic Search
-      </div>
-    </aside>
+        {/* ── Footer ──────────────────────────────────── */}
+        <div
+          style={{
+            padding: "12px 18px",
+            borderTop: "1px solid var(--border-subtle)",
+            fontFamily: "var(--font-ui)",
+            fontSize: 10,
+            color: "var(--text-muted)",
+            lineHeight: 1.5,
+            textAlign: "center",
+          }}
+        >
+          Citations auto-generated via
+          <br />
+          Semantic Search
+        </div>
+      </aside>
+    </>
   )
 }
 

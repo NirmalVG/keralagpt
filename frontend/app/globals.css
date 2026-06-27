@@ -262,8 +262,34 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(200, 149, 42, 0.12);
 }
 
-/* ── Sidebar mobile drawer ──────────────────────────────────── */
-.sidebar-backdrop {
+/* ── Desktop sidebar wrapper — handles collapse/expand ─────── */
+.sidebar-desktop-wrapper {
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Desktop source panel wrapper ──────────────────────────── */
+.source-desktop-wrapper {
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Sidebar/Source panel backdrop (hidden on desktop) ──────── */
+.sidebar-backdrop,
+.source-backdrop {
+  display: none;
+}
+
+/* ── Domain pills hide scrollbar but allow scroll ──────────── */
+.domain-pills {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.domain-pills::-webkit-scrollbar {
   display: none;
 }
 
@@ -274,6 +300,14 @@ select:focus {
     --source-width: 0px;
   }
 
+  /* Desktop wrapper has no effect on mobile — sidebar is fixed */
+  .sidebar-desktop-wrapper,
+  .source-desktop-wrapper {
+    width: 0px !important;
+    min-width: 0px !important;
+    transition: none;
+  }
+
   /* Sidebar becomes a slide-out drawer */
   .sidebar-mobile {
     position: fixed !important;
@@ -282,7 +316,7 @@ select:focus {
     z-index: 200;
     width: 280px !important;
     min-width: 280px !important;
-    height: 100vh !important;
+    height: 100dvh !important;
     transform: translateX(-100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow-lg);
@@ -297,8 +331,9 @@ select:focus {
     position: fixed;
     inset: 0;
     z-index: 199;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease;
@@ -316,13 +351,31 @@ select:focus {
     z-index: 200;
     width: 300px !important;
     min-width: 300px !important;
-    height: 100vh !important;
+    height: 100dvh !important;
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: var(--shadow-lg);
   }
   .source-panel-mobile.source-panel-open {
     transform: translateX(0);
+  }
+
+  /* Source panel backdrop */
+  .source-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .source-backdrop.source-backdrop-visible {
+    opacity: 1;
+    pointer-events: auto;
   }
 
   /* Hide nav labels */

@@ -135,7 +135,7 @@ export default function ContributePage() {
           margin: "0 auto",
           padding: "clamp(24px, 4vw, 48px) clamp(16px, 4vw, 40px) 80px",
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 380px)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))",
           gap: "clamp(24px, 4vw, 48px)",
           alignItems: "start",
         }}
@@ -310,7 +310,7 @@ export default function ContributePage() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))",
                   gap: 16,
                 }}
               >

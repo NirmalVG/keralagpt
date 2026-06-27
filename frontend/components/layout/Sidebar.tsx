@@ -124,9 +124,7 @@ export function Sidebar() {
           borderRight: "1px solid var(--border-subtle)",
           display: "flex",
           flexDirection: "column",
-          height: "100vh",
-          position: "sticky",
-          top: 0,
+          height: "100%",
           overflowY: "auto",
         }}
       >

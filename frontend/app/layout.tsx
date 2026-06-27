@@ -70,9 +70,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/favicon.ico",
-    apple: "/images/keralagpt-logo.png",
+    apple: "/images/apple-touch-icon.png",
   },
-  manifest: undefined,
+  manifest: "/manifest.json",
 }
 
 export const viewport: Viewport = {
@@ -114,6 +114,18 @@ export default function RootLayout({
                   document.documentElement.classList.add('dark');
                 }
               } catch (_) {}
+            `,
+          }}
+        />
+        {/* Register service worker for PWA support */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
             `,
           }}
         />

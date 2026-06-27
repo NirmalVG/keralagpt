@@ -45,7 +45,7 @@ export default function AdminPage() {
             border: "1px solid var(--border-subtle)",
             borderRadius: 16,
             padding: "48px 40px",
-            width: 400,
+            width: "min(400px, 90vw)",
             textAlign: "center",
             boxShadow: "var(--shadow-lg)",
           }}
@@ -155,7 +155,7 @@ export default function AdminPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "16px 40px",
+          padding: "16px clamp(16px, 4vw, 40px)",
           borderBottom: "1px solid var(--border-subtle)",
         }}
       >
@@ -227,7 +227,7 @@ export default function AdminPage() {
         ))}
       </div>
 
-      <div style={{ padding: "24px 40px 80px", maxWidth: 1000 }}>
+      <div style={{ padding: "24px clamp(16px, 4vw, 40px) 80px", maxWidth: 1000 }}>
         {activeTab === "contributions" && <ContributionsTab />}
         {activeTab === "feedback" && <FeedbackTab />}
         {activeTab === "stats" && <StatsTab />}
@@ -478,7 +478,7 @@ function FeedbackTab() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))",
           gap: 16,
           marginBottom: 24,
         }}
@@ -606,7 +606,7 @@ function StatsTab() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
           gap: 16,
           marginBottom: 32,
         }}
