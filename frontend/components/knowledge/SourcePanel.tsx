@@ -96,6 +96,40 @@ export function SourcePanel() {
               {sources.length} source{sources.length !== 1 ? "s" : ""}
             </span>
           )}
+
+          {/* Close button */}
+          <button
+            onClick={() => setSourcePanelOpen(false)}
+            aria-label="Close source panel"
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 6,
+              border: "1px solid var(--border-subtle)",
+              background: "transparent",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 16,
+              color: "var(--text-muted)",
+              transition: "all 0.15s ease",
+              flexShrink: 0,
+              marginLeft: "auto",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--bg-elevated)"
+              e.currentTarget.style.color = "var(--text-secondary)"
+              e.currentTarget.style.borderColor = "var(--border-gold)"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent"
+              e.currentTarget.style.color = "var(--text-muted)"
+              e.currentTarget.style.borderColor = "var(--border-subtle)"
+            }}
+          >
+            ×
+          </button>
         </div>
 
         {/* ── Source Cards ────────────────────────────── */}
