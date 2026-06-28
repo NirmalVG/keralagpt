@@ -432,6 +432,7 @@ select:focus {
   }
   .hero-section {
     padding: 24px 16px !important;
+    justify-content: flex-start !important;
   }
 
   .query-outer {
