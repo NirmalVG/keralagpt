@@ -4,10 +4,10 @@ Calls Groq's LLM API and streams the response token by token.
 
 Why Groq:
 - Fastest inference available (LPU hardware) — ~500 tokens/sec vs ~60 for OpenAI
-- Generous free tier — 14,400 requests/day on llama-3.3-70b
+- Generous free tier — 14,400 requests/day
 - First token latency ~200ms — critical for perceived responsiveness
 
-We use llama-3.3-70b-versatile with fallback to llama-3.1-8b-instant:
+We use openai/gpt-oss-120b with fallback to openai/gpt-oss-20b:
 - 128k context window — fits large retrieved contexts
 - Strong instruction following — respects citation rules
 - Multilingual — handles Malayalam queries
@@ -29,8 +29,8 @@ _groq_client: AsyncGroq | None = None
 
 # Primary model with fallback chain
 MODELS = [
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
 ]
 
 

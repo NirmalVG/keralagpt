@@ -78,7 +78,7 @@ async def process_query(
         client = get_groq_client()
 
         response = await client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": PROCESSOR_SYSTEM_PROMPT},
                 {"role": "user",   "content": f"Query: {query}"},
