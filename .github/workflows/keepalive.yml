@@ -1,0 +1,30 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Runs every 5 days at 06:00 UTC (11:30 AM IST)
+    - cron: '0 6 */5 * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping keepalive endpoint
+        run: |
+          echo "Pinging keepalive endpoint..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://keralagpt-api.onrender.com/health/keepalive)
+          echo "Response code: $response"
+          if [ "$response" -ge 200 ] && [ "$response" -lt 400 ]; then
+            echo "✅ Keepalive successful"
+          else
+            echo "⚠️ Keepalive returned $response — Render may be waking up, retrying..."
+            sleep 30
+            response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://keralagpt-api.onrender.com/health/keepalive)
+            echo "Retry response: $response"
+          fi
+
+      - name: Health check
+        run: |
+          response=$(curl -s --max-time 30 https://keralagpt-api.onrender.com/health)
+          echo "Health: $response"
