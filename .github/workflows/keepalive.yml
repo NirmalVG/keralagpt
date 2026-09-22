@@ -10,21 +10,36 @@ jobs:
   keepalive:
     runs-on: ubuntu-latest
     steps:
+      - name: Wake up Render service
+        run: |
+          echo "Waking up Render service (free-tier cold start can take ~60s)..."
+          # First request wakes the service — allow up to 120s for cold start
+          curl -s -o /dev/null --max-time 120 https://keralagpt-api.onrender.com/health || true
+          echo "Wake-up ping sent, waiting for service to stabilize..."
+          sleep 10
+
       - name: Ping keepalive endpoint
         run: |
           echo "Pinging keepalive endpoint..."
-          response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://keralagpt-api.onrender.com/health/keepalive)
-          echo "Response code: $response"
-          if [ "$response" -ge 200 ] && [ "$response" -lt 400 ]; then
-            echo "✅ Keepalive successful"
-          else
-            echo "⚠️ Keepalive returned $response — Render may be waking up, retrying..."
-            sleep 30
+          MAX_RETRIES=3
+          RETRY_DELAY=30
+          for i in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $i/$MAX_RETRIES..."
             response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://keralagpt-api.onrender.com/health/keepalive)
-            echo "Retry response: $response"
-          fi
+            echo "Response code: $response"
+            if [ "$response" -ge 200 ] && [ "$response" -lt 400 ]; then
+              echo "✅ Keepalive successful (attempt $i)"
+              exit 0
+            fi
+            if [ "$i" -lt "$MAX_RETRIES" ]; then
+              echo "⚠️ Got $response, retrying in ${RETRY_DELAY}s..."
+              sleep $RETRY_DELAY
+            fi
+          done
+          echo "❌ Keepalive failed after $MAX_RETRIES attempts"
+          exit 1
 
       - name: Health check
         run: |
-          response=$(curl -s --max-time 30 https://keralagpt-api.onrender.com/health)
+          response=$(curl -s --max-time 60 https://keralagpt-api.onrender.com/health)
           echo "Health: $response"
