@@ -6,6 +6,9 @@ on:
     - cron: '0 6 */5 * *'
   workflow_dispatch: # Allow manual trigger
 
+permissions:
+  contents: write
+
 jobs:
   keepalive:
     runs-on: ubuntu-latest
@@ -43,3 +46,13 @@ jobs:
         run: |
           response=$(curl -s --max-time 60 https://keralagpt-api.onrender.com/health)
           echo "Health: $response"
+
+  # Prevents GitHub from auto-disabling this workflow after 60 days of inactivity
+  keepalive-commit:
+    runs-on: ubuntu-latest
+    needs: keepalive
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gautamkrishnar/keepalive-workflow@v2
+        with:
+          time_elapsed: 50 # days before making a keepalive commit
