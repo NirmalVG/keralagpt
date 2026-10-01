@@ -2,45 +2,44 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    # Runs every 5 days at 06:00 UTC (11:30 AM IST)
-    - cron: '0 6 */5 * *'
-  workflow_dispatch: # Allow manual trigger
-
+    # Twice a week — Free projects pause after ~7 days of low DB activity
+    - cron: "0 6 * * 1,4"
+  workflow_dispatch:
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
     steps:
-      - name: Wake up Render service
+      - name: Ping Supabase database (required)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
-          echo "Waking up Render service (free-tier cold start can take ~60s)..."
-          # First request wakes the service — allow up to 120s for cold start
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "Missing secrets: set SUPABASE_URL and SUPABASE_SERVICE_KEY in repo Settings → Secrets"
+            exit 1
+          fi
+
+          # Real PostgREST query counts as DB activity (unlike /auth/v1/health)
+          url="${SUPABASE_URL%/}/rest/v1/documents?select=id&limit=1"
+          echo "Pinging $url"
+          code=$(curl -s -o /tmp/keepalive.json -w "%{http_code}" --max-time 30 \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY" \
+            -H "Accept: application/json" \
+            "$url")
+          echo "HTTP $code"
+          cat /tmp/keepalive.json || true
+          if [ "$code" -lt 200 ] || [ "$code" -ge 400 ]; then
+            echo "Supabase keepalive failed"
+            exit 1
+          fi
+          echo "Supabase keepalive OK"
+
+      - name: Wake Render API (optional)
+        continue-on-error: true
+        run: |
           curl -s -o /dev/null --max-time 120 https://keralagpt-api.onrender.com/health || true
-          echo "Wake-up ping sent, waiting for service to stabilize..."
-          sleep 10
-
-      - name: Ping keepalive endpoint
-        run: |
-          echo "Pinging keepalive endpoint..."
-          MAX_RETRIES=3
-          RETRY_DELAY=30
-          for i in $(seq 1 $MAX_RETRIES); do
-            echo "Attempt $i/$MAX_RETRIES..."
-            response=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://keralagpt-api.onrender.com/health/keepalive)
-            echo "Response code: $response"
-            if [ "$response" -ge 200 ] && [ "$response" -lt 400 ]; then
-              echo "✅ Keepalive successful (attempt $i)"
-              exit 0
-            fi
-            if [ "$i" -lt "$MAX_RETRIES" ]; then
-              echo "⚠️ Got $response, retrying in ${RETRY_DELAY}s..."
-              sleep $RETRY_DELAY
-            fi
-          done
-          echo "❌ Keepalive failed after $MAX_RETRIES attempts"
-          exit 1
-
-      - name: Health check
-        run: |
-          response=$(curl -s --max-time 60 https://keralagpt-api.onrender.com/health)
-          echo "Health: $response"
+          sleep 5
+          curl -s -o /dev/null -w "Render keepalive HTTP %{http_code}\n" --max-time 60 \
+            https://keralagpt-api.onrender.com/health/keepalive || true
